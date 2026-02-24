@@ -1,4 +1,3 @@
-
 import SwiftUI
 import CoreData
 
@@ -11,7 +10,7 @@ struct ContentView: View {
     @State private var sleepValue: Double = 5.0
     @State private var sorenessValue: Double = 5.0
     
-    // 3. THE ENGINE (Assuming you have this in another file)
+    // 3. THE ENGINE
     let engine = ReadinessEngine()
     
     // 4. COMPUTED PROPERTY FOR THE GAUGE
@@ -20,52 +19,54 @@ struct ContentView: View {
     }
     
     var body: some View {
-            NavigationView {
-                // THE SUSPENSION (Allows scrolling to prevent overlapping)
-                ScrollView {
-                    VStack(spacing: 30) {
+        NavigationView {
+            // THE SUSPENSION (Allows scrolling to prevent overlapping)
+            ScrollView {
+                VStack(spacing: 30) {
+                    
+                    // 1️⃣ THE GAUGE DISPLAY
+                    VStack {
+                        Text("DRAGSTER READINESS")
+                            .font(.caption)
+                            .tracking(2)
+                            .foregroundColor(.gray)
                         
-                        // THE GAUGE DISPLAY
-                        VStack {
-                            Text("DRAGSTER READINESS")
-                                .font(.caption)
-                                .tracking(2)
-                                .foregroundColor(.gray)
-                            
-                            Text("\(readinessScore, specifier: "%.1f")")
-                                .font(.system(size: 80, weight: .black, design: .monospaced))
-                                .foregroundColor(scoreColor)
-                        }
-                        .padding(.top, 40)
-                        
-                        Divider()
-                        
-                        // THE INPUTS (SLIDERS)
-                        VStack(alignment: .leading, spacing: 25) {
-                            MetricSlider(label: "HRV (Nervous System)", value: $hrvValue, icon: "bolt.heart.fill")
-                            MetricSlider(label: "Sleep (Recovery)", value: $sleepValue, icon: "moon.stars.fill")
-                            MetricSlider(label: "Soreness (Chassis)", value: $sorenessValue, icon: "figure.walk")
-                        }
+                        Text("\(readinessScore, specifier: "%.1f")")
+                            .font(.system(size: 80, weight: .black, design: .monospaced))
+                            .foregroundColor(scoreColor)
+                    }
+                    .padding(.top, 40)
+                    
+                    Divider()
                         .padding(.horizontal)
-                        
-                        // THE IGNITION BUTTON (SAVE)
-                        Button(action: saveEntry) {
-                            Label("SAVE TO PADDOCK", systemImage: "square.and.arrow.down.fill")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.red)
-                                .cornerRadius(12)
-                                .shadow(radius: 5)
-                        }
-                        .padding(.top, 20)
+                    
+                    // 2️⃣ THE INPUTS (SLIDERS)
+                    VStack(alignment: .leading, spacing: 25) {
+                        MetricSlider(label: "HRV (Nervous System)", value: $hrvValue, icon: "bolt.heart.fill")
+                        MetricSlider(label: "Sleep (Recovery)", value: $sleepValue, icon: "moon.stars.fill")
+                        MetricSlider(label: "Soreness (Chassis)", value: $sorenessValue, icon: "figure.walk")
+                    }
+                    .padding(.horizontal)
+                    
+                    // 3️⃣ THE IGNITION BUTTON (SAVE)
+                    Button(action: saveEntry) {
+                        Label("SAVE TO PADDOCK", systemImage: "square.and.arrow.down.fill")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .cornerRadius(12)
+                            .shadow(radius: 5)
+                    }
+                    .padding(.top, 10)
+                    .padding(.horizontal)
+                    
+                    Divider()
                         .padding(.horizontal)
-                        
-                        Divider()
-                            .padding(.horizontal)
-                        
-                        // 🚀 NEW: TELEMETRY NAVIGATION LINK
+                    
+                    // 4️⃣ THE PADDOCK MODULES (Grouped to bypass the 10-view limit)
+                    VStack(spacing: 15) {
                         NavigationLink(destination: PaddockView()) {
                             Label("LIVE SENSOR TELEMETRY", systemImage: "waveform.path.ecg")
                                 .font(.headline)
@@ -75,9 +76,7 @@ struct ContentView: View {
                                 .background(Color.orange.opacity(0.15))
                                 .cornerRadius(12)
                         }
-                        .padding(.horizontal)
-                        Divider()
-                            .padding(.horizontal)
+                        
                         NavigationLink(destination: TelemetryDashboardView()) {
                             Label("VIEW MORNING REPORT", systemImage: "chart.bar.xaxis")
                                 .font(.headline)
@@ -87,21 +86,70 @@ struct ContentView: View {
                                 .background(Color.cyan.opacity(0.15))
                                 .cornerRadius(12)
                         }
-                        .padding(.horizontal)
                         
-                        // FOOTER
-                        Text("RACING SUNDAY: BEACON FELL 10K")
-                            .font(.caption2)
-                            .fontWeight(.bold)
-                            .padding(8)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(5)
+                        NavigationLink(destination: GarageLogView()) {
+                            Label("OPEN GARAGE LOG", systemImage: "list.dash.header.rectangle")
+                                .font(.headline)
+                                .foregroundColor(.purple)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.purple.opacity(0.15))
+                                .cornerRadius(12)
+                        }
+                        
+                        NavigationLink(destination: MissionView()) {
+                            Label("PADDOCK WHITEBOARD", systemImage: "list.clipboard.fill")
+                                .font(.headline)
+                                .foregroundColor(.green)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green.opacity(0.15))
+                                .cornerRadius(12)
+                        }
+                        NavigationLink(destination: TireWearView()) {
+                            Label("TIRE WEAR INVENTORY", systemImage: "shoe.2.fill")
+                                .font(.headline)
+                                .foregroundColor(.yellow)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.yellow.opacity(0.15))
+                                .cornerRadius(12)
+                        }
+                        NavigationLink(destination: ChassisView()) {
+                            Label("CHASSIS TUNING (W/kg)", systemImage: "scalemass.fill")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.orange.opacity(0.15))
+                                .cornerRadius(12)
+                        }
+
+                        NavigationLink(destination: PitStopView()) {
+                            Label("PIT STOP TIMER", systemImage: "timer")
+                                .font(.headline)
+                                .foregroundColor(.red)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red.opacity(0.15))
+                                .cornerRadius(12)
+                        }
                     }
-                    .padding(.bottom, 40)
+                    .padding(.horizontal)
+                    
+                    // 5️⃣ FOOTER
+                    Text("RACING SUNDAY: BEACON FELL 10K")
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .padding(8)
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(5)
                 }
-                .navigationTitle("Dragster OS")
+                .padding(.bottom, 40)
             }
+            .navigationTitle("Dragster OS")
         }
+    }
     
     // COLOR LOGIC
     var scoreColor: Color {
@@ -121,6 +169,10 @@ struct ContentView: View {
 
         do {
             try viewContext.save()
+            
+            // 🏎️ THE HAPTIC "CLUNK"
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            
             print("✅ Telemetry Saved to Paddock.")
         } catch {
             print("❌ Engine Fault: Could not save data.")
@@ -160,7 +212,7 @@ struct MetricSlider: View {
 
 // THE LIVE TELEMETRY VIEW
 struct PaddockView: View {
-    // Note: Capitalized 'HealthKitManager' to match the class name
+    // Note: Capitalized 'HealthKitManager' to match the class name if needed
     @StateObject var hkManager = healthKitManager()
     
     var body: some View {

@@ -10,6 +10,13 @@
 		4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2F62F4DAF8400B948FA /* TelemetryData.swift */; };
 		4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */; };
 		4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */; };
+		4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FC2F4DB52500B948FA /* GarageLogView.swift */; };
+		4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FE2F4DB65B00B948FA /* MissionControl.swift */; };
+		4233D3012F4DB68400B948FA /* MissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3002F4DB68400B948FA /* MissionView.swift */; };
+		4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3022F4DB93300B948FA /* TireWearManager.swift */; };
+		4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3042F4DB96500B948FA /* TireWearView.swift */; };
+		4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3062F4DBAA000B948FA /* ChassisView.swift */; };
+		4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3082F4DBAC100B948FA /* PitStopView.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884D72F4C941A00A50290 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D62F4C941A00A50290 /* Persistence.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
@@ -26,6 +33,13 @@
 		4233D2F62F4DAF8400B948FA /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
 		4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryManager.swift; sourceTree = "<group>"; };
 		4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryDashboardView.swift; sourceTree = "<group>"; };
+		4233D2FC2F4DB52500B948FA /* GarageLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageLogView.swift; sourceTree = "<group>"; };
+		4233D2FE2F4DB65B00B948FA /* MissionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionControl.swift; sourceTree = "<group>"; };
+		4233D3002F4DB68400B948FA /* MissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionView.swift; sourceTree = "<group>"; };
+		4233D3022F4DB93300B948FA /* TireWearManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireWearManager.swift; sourceTree = "<group>"; };
+		4233D3042F4DB96500B948FA /* TireWearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireWearView.swift; sourceTree = "<group>"; };
+		4233D3062F4DBAA000B948FA /* ChassisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisView.swift; sourceTree = "<group>"; };
+		4233D3082F4DBAC100B948FA /* PitStopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitStopView.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D62F4C941A00A50290 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -84,6 +98,13 @@
 				4233D2F62F4DAF8400B948FA /* TelemetryData.swift */,
 				4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */,
 				4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */,
+				4233D2FC2F4DB52500B948FA /* GarageLogView.swift */,
+				4233D2FE2F4DB65B00B948FA /* MissionControl.swift */,
+				4233D3002F4DB68400B948FA /* MissionView.swift */,
+				4233D3022F4DB93300B948FA /* TireWearManager.swift */,
+				4233D3042F4DB96500B948FA /* TireWearView.swift */,
+				4233D3062F4DBAA000B948FA /* ChassisView.swift */,
+				4233D3082F4DBAC100B948FA /* PitStopView.swift */,
 			);
 			path = DragsterOS;
 			sourceTree = "<group>";
@@ -169,11 +190,18 @@
 				42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */,
 				4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */,
 				42B884EC2F4C99E400A50290 /* LogEntry+CoreDataClass.swift in Sources */,
+				4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
 				4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */,
 				42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */,
+				4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */,
+				4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */,
+				4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */,
+				4233D3012F4DB68400B948FA /* MissionView.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */,
+				4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */,
+				4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */,
 				4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */,
 				42B884D72F4C941A00A50290 /* Persistence.swift in Sources */,
 				42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */,
