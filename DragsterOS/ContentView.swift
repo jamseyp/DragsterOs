@@ -15,146 +15,110 @@ struct ContentView: View {
     
     // 4. COMPUTED PROPERTY FOR THE GAUGE
     var readinessScore: Double {
-        engine.calculateScore(hrv: hrvValue, sleep: sleepValue, soreness: sorenessValue)
+        // Since ReadinessEngine returns an Int out of 100, we convert it for the UI
+        Double(engine.calculateScore(hrv: hrvValue, sleepHours: sleepValue, rhr: 50.0, baselineHRV: 60.0)) / 10.0
     }
     
     var body: some View {
         NavigationView {
-            // THE SUSPENSION (Allows scrolling to prevent overlapping)
-            ScrollView {
-                VStack(spacing: 30) {
-                    
-                    // 1️⃣ THE GAUGE DISPLAY
-                    VStack {
-                        Text("DRAGSTER READINESS")
-                            .font(.caption)
-                            .tracking(2)
-                            .foregroundColor(.gray)
+            ZStack {
+                // THE CANVAS: Pure black background for the dashboard
+                Color.black.ignoresSafeArea()
+                
+                // THE SUSPENSION (Allows scrolling to prevent overlapping)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 30) {
                         
-                        Text("\(readinessScore, specifier: "%.1f")")
-                            .font(.system(size: 80, weight: .black, design: .monospaced))
-                            .foregroundColor(scoreColor)
-                    }
-                    .padding(.top, 40)
-                    
-                    Divider()
+                        // 1️⃣ THE GAUGE DISPLAY
+                        VStack {
+                            Text("DRAGSTER READINESS")
+                                .font(.caption)
+                                .tracking(2)
+                                .foregroundColor(.gray)
+                            
+                            // Fixed string interpolation
+                            Text(String(format: "%.1f", readinessScore))
+                                .font(.system(size: 80, weight: .black, design: .monospaced))
+                                .foregroundColor(scoreColor)
+                                .shadow(color: scoreColor.opacity(0.4), radius: 15, x: 0, y: 0)
+                        }
+                        .padding(.top, 20)
+                        
+                        Divider().background(Color.white.opacity(0.2)).padding(.horizontal)
+                        
+                        // 2️⃣ THE INPUTS (SLIDERS)
+                        VStack(alignment: .leading, spacing: 25) {
+                            MetricSlider(label: "HRV (Nervous System)", value: $hrvValue, icon: "bolt.heart.fill")
+                            MetricSlider(label: "Sleep (Recovery)", value: $sleepValue, icon: "moon.stars.fill")
+                            MetricSlider(label: "Soreness (Chassis)", value: $sorenessValue, icon: "figure.walk")
+                        }
                         .padding(.horizontal)
-                    
-                    // 2️⃣ THE INPUTS (SLIDERS)
-                    VStack(alignment: .leading, spacing: 25) {
-                        MetricSlider(label: "HRV (Nervous System)", value: $hrvValue, icon: "bolt.heart.fill")
-                        MetricSlider(label: "Sleep (Recovery)", value: $sleepValue, icon: "moon.stars.fill")
-                        MetricSlider(label: "Soreness (Chassis)", value: $sorenessValue, icon: "figure.walk")
-                    }
-                    .padding(.horizontal)
-                    
-                    // 3️⃣ THE IGNITION BUTTON (SAVE)
-                    Button(action: saveEntry) {
-                        Label("SAVE TO PADDOCK", systemImage: "square.and.arrow.down.fill")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .cornerRadius(12)
-                            .shadow(radius: 5)
-                    }
-                    .padding(.top, 10)
-                    .padding(.horizontal)
-                    
-                    Divider()
-                        .padding(.horizontal)
-                    
-                    // 4️⃣ THE PADDOCK MODULES (Grouped to bypass the 10-view limit)
-                    VStack(spacing: 15) {
-                        NavigationLink(destination: PaddockView()) {
-                            Label("LIVE SENSOR TELEMETRY", systemImage: "waveform.path.ecg")
-                                .font(.headline)
-                                .foregroundColor(.orange)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.orange.opacity(0.15))
-                                .cornerRadius(12)
-                        }
                         
-                        NavigationLink(destination: TelemetryDashboardView()) {
-                            Label("VIEW MORNING REPORT", systemImage: "chart.bar.xaxis")
-                                .font(.headline)
-                                .foregroundColor(.cyan)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.cyan.opacity(0.15))
-                                .cornerRadius(12)
-                        }
-                        
-                        NavigationLink(destination: GarageLogView()) {
-                            Label("OPEN GARAGE LOG", systemImage: "list.dash.header.rectangle")
-                                .font(.headline)
-                                .foregroundColor(.purple)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.purple.opacity(0.15))
-                                .cornerRadius(12)
-                        }
-                        
-                        NavigationLink(destination: MissionView()) {
-                            Label("PADDOCK WHITEBOARD", systemImage: "list.clipboard.fill")
-                                .font(.headline)
-                                .foregroundColor(.green)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.green.opacity(0.15))
-                                .cornerRadius(12)
-                        }
-                        NavigationLink(destination: TireWearView()) {
-                            Label("TIRE WEAR INVENTORY", systemImage: "shoe.2.fill")
-                                .font(.headline)
-                                .foregroundColor(.yellow)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.yellow.opacity(0.15))
-                                .cornerRadius(12)
-                        }
-                        NavigationLink(destination: ChassisView()) {
-                            Label("CHASSIS TUNING (W/kg)", systemImage: "scalemass.fill")
-                                .font(.headline)
+                        // 3️⃣ THE IGNITION BUTTON (SAVE)
+                        Button(action: saveEntry) {
+                            Label("SAVE TO PADDOCK", systemImage: "square.and.arrow.down.fill")
+                                .font(.system(size: 16, weight: .bold, design: .monospaced))
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(Color.orange.opacity(0.15))
+                                .background(Color(white: 0.15)) // Sleek dark button
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.red, lineWidth: 2) // Neon red accent
+                                )
                                 .cornerRadius(12)
                         }
-
-                        NavigationLink(destination: PitStopView()) {
-                            Label("PIT STOP TIMER", systemImage: "timer")
-                                .font(.headline)
-                                .foregroundColor(.red)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.red.opacity(0.15))
-                                .cornerRadius(12)
+                        .padding(.horizontal)
+                        
+                        Divider().background(Color.white.opacity(0.2)).padding(.horizontal)
+                        
+                        // 4️⃣ THE PADDOCK MODULES
+                        VStack(spacing: 12) {
+                            NavigationLink(destination: PaddockView()) {
+                                DashboardMenuButton(title: "LIVE SENSOR TELEMETRY", icon: "waveform.path.ecg", color: .orange)
+                            }
+                            NavigationLink(destination: TelemetryDashboardView()) {
+                                DashboardMenuButton(title: "VIEW MORNING REPORT", icon: "chart.bar.xaxis", color: .cyan)
+                            }
+                            NavigationLink(destination: GarageLogView()) {
+                                DashboardMenuButton(title: "OPEN GARAGE LOG", icon: "list.dash.header.rectangle", color: .purple)
+                            }
+                            NavigationLink(destination: MissionView()) {
+                                DashboardMenuButton(title: "PADDOCK WHITEBOARD", icon: "list.clipboard.fill", color: .green)
+                            }
+                            NavigationLink(destination: TireWearView()) {
+                                DashboardMenuButton(title: "TIRE WEAR INVENTORY", icon: "shoe.2.fill", color: .yellow)
+                            }
+                            NavigationLink(destination: ChassisView()) {
+                                DashboardMenuButton(title: "CHASSIS TUNING (W/kg)", icon: "scalemass.fill", color: .white)
+                            }
+                            NavigationLink(destination: PitStopView()) {
+                                DashboardMenuButton(title: "PIT STOP TIMER", icon: "timer", color: .red)
+                            }
                         }
+                        .padding(.horizontal)
+                        
+                        // 5️⃣ FOOTER
+                        Text("RACING SUNDAY: BEACON FELL 10K")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundColor(.red)
+                            .padding(8)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(5)
+                            .padding(.bottom, 20)
                     }
-                    .padding(.horizontal)
-                    
-                    // 5️⃣ FOOTER
-                    Text("RACING SUNDAY: BEACON FELL 10K")
-                        .font(.caption2)
-                        .fontWeight(.bold)
-                        .padding(8)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(5)
                 }
-                .padding(.bottom, 40)
             }
-            .navigationTitle("Dragster OS")
+            // Enforce Dark Mode on the Navigation Bar
+            .preferredColorScheme(.dark)
+            .navigationBarHidden(true)
         }
     }
     
     // COLOR LOGIC
     var scoreColor: Color {
-        if readinessScore > 7.5 { return .green }
-        if readinessScore > 5.0 { return .orange }
+        if readinessScore >= 7.5 { return .cyan } // Peak Performance Color
+        if readinessScore >= 5.0 { return .green }
         return .red
     }
     
@@ -169,10 +133,9 @@ struct ContentView: View {
 
         do {
             try viewContext.save()
-            
             // 🏎️ THE HAPTIC "CLUNK"
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-            
+            let impact = UIImpactFeedbackGenerator(style: .rigid)
+            impact.impactOccurred()
             print("✅ Telemetry Saved to Paddock.")
         } catch {
             print("❌ Engine Fault: Could not save data.")
@@ -180,7 +143,31 @@ struct ContentView: View {
     }
 }
 
-// THE REUSABLE COMPONENT (LEAN & CLEAN)
+// 🎨 THE CANVAS: REUSABLE COMPONENTS
+
+// Extracted the Menu Button to keep the main view elegant
+struct DashboardMenuButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .frame(width: 30)
+            Text(title)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .opacity(0.5)
+        }
+        .font(.system(size: 14, weight: .bold, design: .monospaced))
+        .foregroundColor(color)
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
 struct MetricSlider: View {
     let label: String
     @Binding var value: Double
@@ -189,20 +176,20 @@ struct MetricSlider: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(label, systemImage: icon)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.secondary)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .foregroundColor(.gray)
             
             HStack {
-                // The actual slider
                 Slider(value: $value, in: 1...10, step: 0.5)
-                    .accentColor(.red)
+                    .accentColor(.white)
                 
-                // The numerical readout
-                Text("\(value, specifier: "%.1f")")
-                    .font(.system(.body, design: .monospaced))
-                    .frame(width: 45)
-                    .padding(5)
-                    .background(Color.gray.opacity(0.1))
+                // Fixed String Interpolation
+                Text(String(format: "%.1f", value))
+                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    .foregroundColor(.white)
+                    .frame(width: 50)
+                    .padding(.vertical, 5)
+                    .background(Color(white: 0.15))
                     .cornerRadius(5)
             }
         }
@@ -210,52 +197,85 @@ struct MetricSlider: View {
     }
 }
 
-// THE LIVE TELEMETRY VIEW
 struct PaddockView: View {
-    // Note: Capitalized 'HealthKitManager' to match the class name if needed
-    @StateObject var hkManager = healthKitManager()
+    @StateObject var hkManager = HealthKitManager()
+    
+    // 1. THE NAVIGATION CONTROLLER
+    @Environment(\.dismiss) var dismiss
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("LIVE TELEMETRY")
-                .font(.system(.largeTitle, design: .monospaced))
-                .fontWeight(.bold)
+        ZStack {
+            Color.black.ignoresSafeArea()
             
-            // The Sensor Gauge
-            VStack {
-                Text("CURRENT HEART RATE")
-                    .font(.caption)
-                    .foregroundColor(.gray)
+            VStack(alignment: .leading, spacing: 30) {
                 
-                HStack {
-                    Image(systemName: "heart.fill")
-                        .foregroundColor(.red)
-                    // Added a check: if 0, show "--"
-                    Text(hkManager.latestHR > 0 ? "\(Int(hkManager.latestHR)) BPM" : "-- BPM")
-                        .font(.system(size: 40, weight: .black, design: .monospaced))
+                // 2. THE CUSTOM BACK BUTTON
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("DASHBOARD")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    }
+                    .foregroundColor(.gray)
+                }
+                .padding(.top, 20)
+                .padding(.horizontal)
+                
+                // Central Content
+                VStack(spacing: 30) {
+                    Text("LIVE SENSOR DATA")
+                        .font(.system(size: 24, weight: .black, design: .monospaced))
+                        .foregroundColor(.white)
+                    
+                    VStack(spacing: 10) {
+                        Text("HEART RATE")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                        
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(.red)
+                            Text(hkManager.latestHR > 0 ? "\(Int(hkManager.latestHR))" : "--")
+                                .font(.system(size: 60, weight: .black, design: .monospaced))
+                                .foregroundColor(.white)
+                            Text("BPM")
+                                .font(.headline)
+                                .foregroundColor(.gray)
+                                .padding(.top, 20)
+                        }
+                        
+                        Text("SOURCE: \(hkManager.sensorName)")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background(Color(white: 0.2))
+                            .cornerRadius(5)
+                            .foregroundColor(.gray)
+                    }
+                    .padding(30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color(white: 0.2), lineWidth: 1)
+                    )
+                    
+                    Button(action: { hkManager.requestAuthorization() }) {
+                        Text("CALIBRATE SENSORS")
+                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                            .foregroundColor(.black)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                    }
+                    .padding(.horizontal, 40)
                 }
                 
-                // The Source Indicator
-                Text("SOURCE: \(hkManager.sensorName)")
-                    .font(.system(size: 12, weight: .bold))
-                    .padding(5)
-                    .background(hkManager.sensorName.contains("Strap") ? Color.green.opacity(0.2) : Color.blue.opacity(0.2))
-                    .cornerRadius(5)
+                Spacer()
             }
-            .padding()
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(15)
-            
-            Button("START CALIBRATION") {
-                hkManager.requestAuthorization()
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.orange)
-            
-            Spacer()
         }
-        .padding()
-        .navigationTitle("Paddock")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarHidden(true)
     }
 }

@@ -9,7 +9,7 @@ import HealthKit
 import Foundation
 import SwiftUI
 
-class healthKitManager: ObservableObject {
+class HealthKitManager: ObservableObject {
     let healthStore = HKHealthStore()
     
     @Published var latestHR: Double = 0

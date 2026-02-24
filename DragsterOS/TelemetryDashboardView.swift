@@ -1,18 +1,32 @@
 // TelemetryDashboardView.swift
-// DragsterOS - High-Performance Telemetry
-
 import SwiftUI
 
 struct TelemetryDashboardView: View {
     @StateObject var engine = TelemetryManager()
     
+    // 1. THE NAVIGATION CONTROLLER
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
-            // The "Pure Black" Canvas
             Color.black.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 30) {
+                    
+                    // 2. THE CUSTOM BACK BUTTON
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .bold))
+                            Text("DASHBOARD")
+                                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        }
+                        .foregroundColor(.gray)
+                        .padding(.top, 10)
+                    }
                     
                     // --- HEADER SECTION ---
                     VStack(alignment: .leading, spacing: 4) {
@@ -21,15 +35,13 @@ struct TelemetryDashboardView: View {
                             .foregroundColor(.white)
                             .tracking(2)
                         
-                        // A subtle accent line to define the section
                         Rectangle()
                             .fill(Color.cyan)
                             .frame(width: 40, height: 3)
                     }
-                    .padding(.top, 20)
+                    // ... the rest of your view remains exactly the same ...
                     
-                    // --- HERO INSTRUMENT ---
-                    // Centering the Readiness Gauge for maximum impact
+                    // Center the Readiness Gauge
                     HStack {
                         Spacer()
                         ReadinessGauge(score: Double(engine.currentReport.readinessScore))
@@ -37,7 +49,7 @@ struct TelemetryDashboardView: View {
                     }
                     .padding(.vertical, 10)
                     
-                    // --- TELEMETRY GRID ---
+                    // Telemetry Grid
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                         MetricCard(title: "RESTING HR", value: "\(engine.currentReport.restingHR) BPM", color: .red)
                         MetricCard(title: "HRV BIAS", value: engine.currentReport.hrvStatus, color: .blue)
@@ -51,7 +63,7 @@ struct TelemetryDashboardView: View {
                 .padding(.horizontal)
             }
         }
-        .navigationBarHidden(true) // We use our custom header for a more "embedded" look
+        .navigationBarHidden(true)
     }
 }
 
