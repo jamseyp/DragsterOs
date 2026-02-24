@@ -17,6 +17,7 @@
 		4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3042F4DB96500B948FA /* TireWearView.swift */; };
 		4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3062F4DBAA000B948FA /* ChassisView.swift */; };
 		4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3082F4DBAC100B948FA /* PitStopView.swift */; };
+		4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884D72F4C941A00A50290 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D62F4C941A00A50290 /* Persistence.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
@@ -40,6 +41,7 @@
 		4233D3042F4DB96500B948FA /* TireWearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TireWearView.swift; sourceTree = "<group>"; };
 		4233D3062F4DBAA000B948FA /* ChassisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisView.swift; sourceTree = "<group>"; };
 		4233D3082F4DBAC100B948FA /* PitStopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitStopView.swift; sourceTree = "<group>"; };
+		4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessGauge.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D62F4C941A00A50290 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -91,6 +93,7 @@
 				42B884D62F4C941A00A50290 /* Persistence.swift */,
 				42B884DB2F4C941A00A50290 /* ContentView.swift */,
 				42B884E82F4C946300A50290 /* ReadinessEngine.swift */,
+				4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */,
 				42B884DD2F4C942100A50290 /* Assets.xcassets */,
 				42B884DF2F4C942100A50290 /* DragsterOS.entitlements */,
 				42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */,
@@ -191,6 +194,7 @@
 				4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */,
 				42B884EC2F4C99E400A50290 /* LogEntry+CoreDataClass.swift in Sources */,
 				4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */,
+				4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
 				4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */,
 				42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */,
