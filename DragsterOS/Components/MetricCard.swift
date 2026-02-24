@@ -1,31 +1,44 @@
 import SwiftUI
 
+import SwiftUI
+
 struct MetricCard: View {
-    var title: String
-    var value: String
-    var color: Color
+    let title: String
+    let value: String
+    let color: Color // Used for the functional status accent
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
+        VStack(alignment: .leading, spacing: 0) {
+            // Header: The functional label
+            Text(title.uppercased())
                 .font(.system(size: 10, weight: .black, design: .monospaced))
-                .foregroundColor(ColorTheme.textSecondary)
                 .tracking(1.5)
+                .foregroundColor(.gray)
             
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(color)
-                .shadow(color: color.opacity(0.3), radius: 5, x: 0, y: 0)
+            Spacer()
+            
+            // Value: The high-fidelity data point
+            VStack(alignment: .leading, spacing: 4) {
+                Text(value)
+                    .font(.system(size: 18, weight: .heavy, design: .monospaced))
+                    .foregroundColor(.white)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                
+                // Functional Accent: A small status bar at the base of the value
+                Rectangle()
+                    .fill(color)
+                    .frame(width: 24, height: 2)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 100) // Fixed height for a perfect grid
+        .background(Color(white: 0.08))
+        .cornerRadius(12)
+        .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .fill(ColorTheme.panel)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(ColorTheme.border, lineWidth: 1)
-                )
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
     }
 }

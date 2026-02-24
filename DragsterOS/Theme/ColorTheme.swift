@@ -19,4 +19,18 @@ struct ColorTheme {
     static let warning = Color.yellow
     static let critical = Color.red
     static let secondaryData = Color.purple
+    
+    static let primaryBackground = Color.black
+        static let cardBackground = Color(white: 0.07)
+        static let accentNeon = Color(red: 0.2, green: 1.0, blue: 0.4) // Neon Green
+        static let warningOrange = Color.orange
+    
+    struct Typography {
+            static func dataFont(size: CGFloat) -> Font {
+                .system(size: size, weight: .heavy, design: .monospaced)
+            }
+            static func headerFont(size: CGFloat) -> Font {
+                .system(size: size, weight: .black, design: .rounded)
+            }
+        }
 }

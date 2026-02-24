@@ -5,8 +5,7 @@ struct ChassisView: View {
     @State private var weight: Double = 95.8
     @State private var maxPower: Double = 336.0
     
-    // 1. THE NAVIGATION CONTROLLER
-    @Environment(\.dismiss) var dismiss
+
     
     // The Engine Calculation
     var powerToWeight: Double {
@@ -16,10 +15,7 @@ struct ChassisView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            // 2. THE CUSTOM BACK BUTTON
-            Button(action: {
-                dismiss()
-            }) {
+           
                 HStack(spacing: 6) {
                     Image(systemName: "chevron.left")
                         .font(.system(size: 14, weight: .bold))
@@ -27,7 +23,7 @@ struct ChassisView: View {
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                 }
                 .foregroundColor(.gray)
-            }
+            
             .padding(.top, 20)
             .padding(.horizontal)
             
