@@ -4,6 +4,9 @@ struct PitStopView: View {
     @State private var timeRemaining = 300 // 5 Minutes (300 seconds)
     @State private var isRunning = false
     
+    // 1. THE NAVIGATION CONTROLLER
+    @Environment(\.dismiss) var dismiss
+    
     // The Swift Timer Engine
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
@@ -17,6 +20,20 @@ struct PitStopView: View {
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+            // 2. THE CUSTOM BACK BUTTON
+            Button(action: {
+                dismiss()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("DASHBOARD")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                }
+                .foregroundColor(.gray)
+            }
+            .padding(.top, 20)
+            .padding(.horizontal)
             
             VStack(spacing: 40) {
                 Text("PIT STOP PROTOCOL")

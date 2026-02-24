@@ -18,6 +18,12 @@
 		4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3062F4DBAA000B948FA /* ChassisView.swift */; };
 		4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3082F4DBAC100B948FA /* PitStopView.swift */; };
 		4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */; };
+		4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D30E2F4DC7FB00B948FA /* PaddockView.swift */; };
+		4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3112F4DC87200B948FA /* MetricCard.swift */; };
+		4233D3142F4DC8D300B948FA /* PerrformanceConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */; };
+		4233D3162F4DC98F00B948FA /* DashboardMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3152F4DC98F00B948FA /* DashboardMenuButton.swift */; };
+		4233D3182F4DC9A100B948FA /* MetricSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3172F4DC9A100B948FA /* MetricSlider.swift */; };
+		4233D31B2F4DC9D600B948FA /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D31A2F4DC9D600B948FA /* ColorTheme.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884D72F4C941A00A50290 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D62F4C941A00A50290 /* Persistence.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
@@ -42,6 +48,12 @@
 		4233D3062F4DBAA000B948FA /* ChassisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisView.swift; sourceTree = "<group>"; };
 		4233D3082F4DBAC100B948FA /* PitStopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PitStopView.swift; sourceTree = "<group>"; };
 		4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessGauge.swift; sourceTree = "<group>"; };
+		4233D30E2F4DC7FB00B948FA /* PaddockView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaddockView.swift; sourceTree = "<group>"; };
+		4233D3112F4DC87200B948FA /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
+		4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerrformanceConstants.swift; sourceTree = "<group>"; };
+		4233D3152F4DC98F00B948FA /* DashboardMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardMenuButton.swift; sourceTree = "<group>"; };
+		4233D3172F4DC9A100B948FA /* MetricSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricSlider.swift; sourceTree = "<group>"; };
+		4233D31A2F4DC9D600B948FA /* ColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D62F4C941A00A50290 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -67,6 +79,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4233D3102F4DC81100B948FA /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				4233D3112F4DC87200B948FA /* MetricCard.swift */,
+				4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */,
+				4233D3152F4DC98F00B948FA /* DashboardMenuButton.swift */,
+				4233D3172F4DC9A100B948FA /* MetricSlider.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		4233D3192F4DC9B400B948FA /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				4233D31A2F4DC9D600B948FA /* ColorTheme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
 		42B884C82F4C941A00A50290 = {
 			isa = PBXGroup;
 			children = (
@@ -88,6 +119,8 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				4233D3192F4DC9B400B948FA /* Theme */,
+				4233D3102F4DC81100B948FA /* Components */,
 				42B884D42F4C941A00A50290 /* DragsterOSApp.swift */,
 				42B884EE2F4CE28300A50290 /* HealthKitManager.swift */,
 				42B884D62F4C941A00A50290 /* Persistence.swift */,
@@ -108,6 +141,7 @@
 				4233D3042F4DB96500B948FA /* TireWearView.swift */,
 				4233D3062F4DBAA000B948FA /* ChassisView.swift */,
 				4233D3082F4DBAC100B948FA /* PitStopView.swift */,
+				4233D30E2F4DC7FB00B948FA /* PaddockView.swift */,
 			);
 			path = DragsterOS;
 			sourceTree = "<group>";
@@ -201,11 +235,17 @@
 				4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */,
 				4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */,
 				4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */,
+				4233D3142F4DC8D300B948FA /* PerrformanceConstants.swift in Sources */,
+				4233D3182F4DC9A100B948FA /* MetricSlider.swift in Sources */,
 				4233D3012F4DB68400B948FA /* MissionView.swift in Sources */,
+				4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
+				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,
 				42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */,
 				4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */,
 				4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */,
+				4233D3162F4DC98F00B948FA /* DashboardMenuButton.swift in Sources */,
+				4233D31B2F4DC9D600B948FA /* ColorTheme.swift in Sources */,
 				4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */,
 				42B884D72F4C941A00A50290 /* Persistence.swift in Sources */,
 				42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */,

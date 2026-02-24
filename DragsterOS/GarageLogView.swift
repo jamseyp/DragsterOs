@@ -4,6 +4,9 @@ import CoreData
 struct GarageLogView: View {
     // 1. DATABASE CONNECTION
     @Environment(\.managedObjectContext) private var viewContext
+    
+    // 1. THE NAVIGATION CONTROLLER
+    @Environment(\.dismiss) var dismiss
 
     // 2. MODERN FETCH REQUEST
     // Using the modern Swift SortDescriptor prevents Objective-C keypath crashes

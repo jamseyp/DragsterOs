@@ -1,6 +1,7 @@
 // TelemetryDashboardView.swift
 import SwiftUI
 
+
 struct TelemetryDashboardView: View {
     @StateObject var engine = TelemetryManager()
     
@@ -67,36 +68,3 @@ struct TelemetryDashboardView: View {
     }
 }
 
-// Reusable UI Component for the Grid
-// A Refined, High-Contrast Metric Card
-struct MetricCard: View {
-    var title: String
-    var value: String
-    var color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            
-            
-            Text(title)
-                .font(.system(size: 10, weight: .black, design: .monospaced))
-                .foregroundColor(.gray.opacity(0.8))
-                .tracking(1.5) // Increased letter spacing for that "instrument" look
-            
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(color)
-                .shadow(color: color.opacity(0.3), radius: 5, x: 0, y: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(white: 0.08)) // Deeper black for higher contrast
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(white: 0.15), lineWidth: 1) // Subtle border definition
-                )
-        )
-    }
-}

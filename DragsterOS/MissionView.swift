@@ -3,9 +3,26 @@ import SwiftUI
 struct MissionView: View {
     @StateObject var manager = MissionManager()
     
+    // 1. THE NAVIGATION CONTROLLER
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color.black.ignoresSafeArea()
+            // 2. THE CUSTOM BACK BUTTON
+            Button(action: {
+                dismiss()
+            }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 14, weight: .bold))
+                    Text("DASHBOARD")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                }
+                .foregroundColor(.gray)
+            }
+            .padding(.top, 20)
+            .padding(.horizontal)
             
             VStack(alignment: .leading, spacing: 20) {
                 // HEADER
