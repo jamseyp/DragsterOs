@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2F62F4DAF8400B948FA /* TelemetryData.swift */; };
+		4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */; };
+		4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884D72F4C941A00A50290 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D62F4C941A00A50290 /* Persistence.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
@@ -20,6 +23,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		4233D2F62F4DAF8400B948FA /* TelemetryData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryData.swift; sourceTree = "<group>"; };
+		4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryManager.swift; sourceTree = "<group>"; };
+		4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryDashboardView.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D62F4C941A00A50290 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
@@ -75,6 +81,9 @@
 				42B884DF2F4C942100A50290 /* DragsterOS.entitlements */,
 				42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */,
 				42B884E02F4C942100A50290 /* Preview Content */,
+				4233D2F62F4DAF8400B948FA /* TelemetryData.swift */,
+				4233D2F82F4DAFF900B948FA /* TelemetryManager.swift */,
+				4233D2FA2F4DB08600B948FA /* TelemetryDashboardView.swift */,
 			);
 			path = DragsterOS;
 			sourceTree = "<group>";
@@ -158,11 +167,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */,
+				4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */,
 				42B884EC2F4C99E400A50290 /* LogEntry+CoreDataClass.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
+				4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */,
 				42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */,
+				4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */,
 				42B884D72F4C941A00A50290 /* Persistence.swift in Sources */,
 				42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */,
 			);

@@ -76,6 +76,18 @@ struct ContentView: View {
                                 .cornerRadius(12)
                         }
                         .padding(.horizontal)
+                        Divider()
+                            .padding(.horizontal)
+                        NavigationLink(destination: TelemetryDashboardView()) {
+                            Label("VIEW MORNING REPORT", systemImage: "chart.bar.xaxis")
+                                .font(.headline)
+                                .foregroundColor(.cyan)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.cyan.opacity(0.15))
+                                .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
                         
                         // FOOTER
                         Text("RACING SUNDAY: BEACON FELL 10K")
