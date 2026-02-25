@@ -1,53 +1,49 @@
 import SwiftUI
 import SwiftData
 
-// 🎨 ARCHITECTURE: The visual inventory for all active footwear.
-// We use smooth linear progress bars and strict typographic hierarchy
-// to instantly communicate structural degradation.
-
+// MARK: - 🗺️ INVENTORY ROOT
+/// The visual inventory for all active footwear. Uses dynamic progress bars
+/// and semantic color shifting to signal structural degradation.
 struct TireWearView: View {
     @Environment(\.modelContext) private var context
     
-    // Fetch only active shoes, sorted by most worn
+    // Fetch active equipment, prioritized by the highest mileage (structural wear)
     @Query(filter: #Predicate<RunningShoe> { $0.isActive }, sort: \RunningShoe.currentMileage, order: .reverse)
     private var activeShoes: [RunningShoe]
     
-    // ✨ THE FIX: This state variable now properly lives inside the view structure
     @State private var showingAddShoeSheet = false
     
     var body: some View {
         ZStack {
-            // Using your customized ColorTheme
+            // Theme-aware background (Aluminum in Light / OLED in Dark)
             ColorTheme.background.ignoresSafeArea()
             
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     
-                    // HEADER
+                    // --- SECTION: HEADER ---
                     VStack(alignment: .leading, spacing: 4) {
                         Text("EQUIPMENT INVENTORY")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.gray)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(ColorTheme.textMuted)
                         
                         Text("STRUCTURAL INTEGRITY")
                             .font(.system(size: 28, weight: .heavy, design: .rounded))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .foregroundStyle(ColorTheme.textPrimary)
                     }
                     .padding(.top, 20)
                     .padding(.horizontal)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     
+                    // --- SECTION: INVENTORY LIST ---
                     if activeShoes.isEmpty {
-                        // ✨ THE POLISH: A premium empty state if the database is unpopulated
                         ContentUnavailableView(
                             "NO EQUIPMENT LOGGED",
                             systemImage: "shoe.2",
                             description: Text("Initialize your footwear rotation to begin tracking degradation.")
                         )
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(ColorTheme.prime)
                     } else {
-                        // 1️⃣ THE INVENTORY LIST
                         VStack(spacing: 16) {
                             ForEach(activeShoes) { shoe in
                                 ShoeDegradationCard(shoe: shoe)
@@ -56,11 +52,11 @@ struct TireWearView: View {
                         .padding(.horizontal)
                     }
                 }
+                .padding(.bottom, 40)
             }
         }
         .navigationTitle("INVENTORY")
         .navigationBarTitleDisplayMode(.inline)
-        // ✨ THE FIX: Toolbar and Sheet modifiers are now properly attached to the main view body
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: {
@@ -68,7 +64,7 @@ struct TireWearView: View {
                     showingAddShoeSheet = true
                 }) {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(ColorTheme.prime)
                 }
             }
         }
@@ -78,79 +74,72 @@ struct TireWearView: View {
     }
 }
 
-// ✨ THE POLISH: A highly specialized gauge for visualizing foam/carbon wear.
+// MARK: - 📦 COMPONENT: DEGRADATION CARD
 struct ShoeDegradationCard: View {
     @Bindable var shoe: RunningShoe
     @State private var animatedWidth: CGFloat = 0
     
-    // Dynamically shift colors based on how close the shoe is to structural failure
+    // Maps the integrity ratio to the semantic color palette
     private var healthColor: Color {
-        let ratio = shoe.integrityRatio
-        switch ratio {
-        case 0.0..<0.6: return .cyan    // Prime condition
-        case 0.6..<0.85: return .yellow // Mid-life
-        default: return .red            // Critical degradation (Time to replace)
-        }
+        let ratio = shoe.currentMileage / shoe.maxLifespan
+        if ratio < 0.6 { return ColorTheme.recovery }   // Fresh
+        if ratio < 0.85 { return ColorTheme.warning }   // Mid-life
+        return ColorTheme.critical                      // Critical
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             
-            // 1. Shoe Metadata
+            // 1. Identity & Status
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(shoe.name.uppercased())
+                    Text(shoe.model.uppercased()) // Adjusted to .model property
                         .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(ColorTheme.textPrimary)
                     
                     HStack {
-                        Text(shoe.terrainType.uppercased())
+                        Text(shoe.brand.uppercased())
                         Text("•")
                         Text(shoe.purpose.uppercased())
                     }
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.gray)
+                    .foregroundStyle(ColorTheme.textMuted)
                 }
                 
                 Spacer()
                 
-                // 2. Numerical Mileage
+                // 2. Numerical Telemetry
                 VStack(alignment: .trailing, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
                         Text("\(Int(shoe.currentMileage))")
                             .font(.system(size: 24, weight: .heavy, design: .monospaced))
                             .foregroundStyle(healthColor)
-                            .contentTransition(.numericText())
                         Text("KM")
                             .font(.caption2.bold())
-                            .foregroundStyle(.gray)
+                            .foregroundStyle(ColorTheme.textMuted)
                     }
                     Text("OF \(Int(shoe.maxLifespan)) KM")
                         .font(.system(size: 8, weight: .bold, design: .monospaced))
-                        .foregroundStyle(.gray)
+                        .foregroundStyle(ColorTheme.textMuted)
                 }
             }
             
-            // 3. The Fluid Degradation Bar
+            // 3. Fluid Progress Bar
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
-                    // Track Background
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.white.opacity(0.1))
+                        .fill(ColorTheme.textPrimary.opacity(0.1))
                         .frame(height: 8)
                     
-                    // Animated Fill
                     RoundedRectangle(cornerRadius: 4)
                         .fill(healthColor)
                         .frame(width: animatedWidth, height: 8)
-                        // Add a subtle glow if the shoe is dangerously worn
-                        .shadow(color: shoe.integrityRatio > 0.85 ? .red.opacity(0.8) : .clear, radius: 4)
+                        .shadow(color: (shoe.currentMileage / shoe.maxLifespan) > 0.85 ? ColorTheme.critical.opacity(0.5) : .clear, radius: 4)
                 }
                 .onAppear {
-                    // Calculate the exact pixel width of the progress bar
-                    let targetWidth = geometry.size.width * CGFloat(shoe.integrityRatio)
+                    let ratio = CGFloat(shoe.currentMileage / shoe.maxLifespan)
+                    let targetWidth = geometry.size.width * min(ratio, 1.0)
                     
-                    // Spring animation makes the bar "shoot" across the screen on load
                     withAnimation(.spring(response: 0.8, dampingFraction: 0.7)) {
                         animatedWidth = targetWidth
                     }
@@ -158,35 +147,36 @@ struct ShoeDegradationCard: View {
             }
             .frame(height: 8)
             
-            // 4. Tactical Warning (Only shows if nearing end of life)
-            if shoe.integrityRatio > 0.85 {
+            // 4. Tactical Warning
+            if (shoe.currentMileage / shoe.maxLifespan) > 0.85 {
                 HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                    Text("CRITICAL WEAR: EVA FOAM DEGRADED. RISK OF INJURY.")
+                    Text("CRITICAL WEAR: RISK OF INJURY DETECTED.")
                 }
                 .font(.system(size: 9, weight: .black, design: .monospaced))
-                .foregroundStyle(.red)
+                .foregroundStyle(ColorTheme.critical)
                 .padding(.top, 4)
             }
         }
         .padding(20)
-        .background(Color.white.opacity(0.05))
+        .background(ColorTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(healthColor.opacity(0.3), lineWidth: 1)
+                .stroke(healthColor.opacity(0.2), lineWidth: 1)
         )
     }
 }
 
-// 🎨 THE CANVAS: The tactile entry form for new equipment.
+// MARK: - 🎨 SHEET: INITIALIZE EQUIPMENT
 struct AddShoeSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    @State private var name: String = ""
+    @State private var brand: String = ""
+    @State private var model: String = ""
     @State private var terrain: String = "Road"
-    @State private var purpose: String = "Speed"
+    @State private var purpose: String = "Daily"
     @State private var currentMileage: Double = 0.0
     
     let terrains = ["Road", "Trail", "Track"]
@@ -198,48 +188,48 @@ struct AddShoeSheet: View {
                 ColorTheme.background.ignoresSafeArea()
                 
                 Form {
-                    Section(header: Text("EQUIPMENT IDENTIFICATION").font(.caption.monospaced())) {
-                        TextField("Shoe Model (e.g., Boston 12)", text: $name)
-                            .foregroundStyle(.white)
+                    Section(header: Text("SPECIFICATIONS").font(.caption.monospaced())) {
+                        TextField("Brand (e.g., Nike)", text: $brand)
+                            .foregroundStyle(ColorTheme.textPrimary)
+                        
+                        TextField("Model (e.g., Vaporfly 3)", text: $model)
+                            .foregroundStyle(ColorTheme.textPrimary)
                         
                         Picker("Terrain", selection: $terrain) {
                             ForEach(terrains, id: \.self) { Text($0) }
                         }
                         
-                        Picker("Tactical Purpose", selection: $purpose) {
+                        Picker("Purpose", selection: $purpose) {
                             ForEach(purposes, id: \.self) { Text($0) }
                         }
                     }
-                    .listRowBackground(ColorTheme.surface)
+                    .listRowBackground(ColorTheme.panel)
                     
-                    Section(header: Text("STRUCTURAL WEAR").font(.caption.monospaced())) {
+                    Section(header: Text("STRUCTURAL HISTORY").font(.caption.monospaced())) {
                         VStack(alignment: .leading) {
-                            Text("Current Mileage: \(Int(currentMileage)) km")
+                            Text("\(Int(currentMileage)) KM ON CHASSIS")
                                 .font(.system(.body, design: .monospaced, weight: .bold))
                                 .foregroundStyle(ColorTheme.prime)
                             
                             Slider(value: $currentMileage, in: 0...500, step: 1)
                         }
                     }
-                    .listRowBackground(ColorTheme.surface)
+                    .listRowBackground(ColorTheme.panel)
                 }
                 .scrollContentBackground(.hidden)
             }
-            .navigationTitle("INITIALIZE TIRE")
+            .navigationTitle("INITIALIZE CHASSIS")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("CANCEL") { dismiss() }
+                    Button("ABORT") { dismiss() }
                         .foregroundStyle(ColorTheme.textMuted)
-                        .font(.caption.bold().monospaced())
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("ENGAGE") {
-                        saveShoe()
-                    }
-                    .foregroundStyle(ColorTheme.prime)
-                    .font(.caption.bold().monospaced())
-                    .disabled(name.isEmpty)
+                    Button("ENGAGE") { saveShoe() }
+                        .foregroundStyle(ColorTheme.prime)
+                        .font(.caption.bold().monospaced())
+                        .disabled(brand.isEmpty || model.isEmpty)
                 }
             }
         }
@@ -247,21 +237,16 @@ struct AddShoeSheet: View {
     
     private func saveShoe() {
         let newShoe = RunningShoe(
-                    name: name,
-                    terrainType: terrain,
-                    purpose: purpose,
-                    currentMileage: currentMileage,
-                    maxLifespan: 500.0 // Default structural limit
-                )
-                
-                // 1. Insert into the context
-                context.insert(newShoe)
-                
-                // 2. Force the engine to write to disk immediately so the UI updates instantly
-                try? context.save()
-                
-                // 3. Tactile feedback and dismiss
-                UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-                dismiss()
+            brand: brand,
+            model: model,
+            terrainType: terrain,
+            purpose: purpose,
+            currentMileage: currentMileage
+        )
+        
+        context.insert(newShoe)
+        try? context.save()
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        dismiss()
     }
 }

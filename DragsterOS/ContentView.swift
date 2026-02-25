@@ -80,9 +80,23 @@ struct ContentView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 5))
                             .padding(.bottom, 20)
                     }
+                    // ⚠️ DEVELOPMENT ONLY: Kill Switch
+                                            Button(action: purgeDatabase) {
+                                                HStack {
+                                                    Image(systemName: "trash.fill")
+                                                    Text("FACTORY RESET: PURGE DATA CACHE")
+                                                }
+                                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                .foregroundStyle(ColorTheme.critical)
+                                                .padding()
+                                                .frame(maxWidth: .infinity)
+                                                .background(ColorTheme.critical.opacity(0.1))
+                                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                                            }
+                                            .padding(.horizontal)
+                                            .padding(.bottom, 40)
                 }
             }
-            .preferredColorScheme(.dark)
             .task {
                 await bootSystem()
             }
@@ -133,4 +147,25 @@ struct ContentView: View {
             print("❌ Boot Fault: \(error.localizedDescription)")
         }
     }
+    // MARK: - ⚠️ SYSTEM OVERRIDE: Factory Reset
+        private func purgeDatabase() {
+            do {
+                // ✨ THE COMMAND: SwiftData's modern batch-delete protocol
+                try context.delete(model: TelemetryLog.self)
+                try context.delete(model: ChassisSnapshot.self)
+                try context.delete(model: RunningShoe.self)
+                
+                // Force the SQLite database to commit the empty state immediately
+                try context.save()
+                
+                // Heavy haptic confirmation that the system is wiped
+                let impact = UINotificationFeedbackGenerator()
+                impact.notificationOccurred(.success)
+                
+                print("✅ SYSTEM PURGED: Database cache completely cleared.")
+                
+            } catch {
+                print("❌ PURGE FAULT: \(error.localizedDescription)")
+            }
+        }
 }

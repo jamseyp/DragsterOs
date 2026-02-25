@@ -32,6 +32,8 @@
 		425C58722F4F0BF200EFBA4A /* hmPlan.csv in Resources */ = {isa = PBXBuildFile; fileRef = 425C58712F4F0BF200EFBA4A /* hmPlan.csv */; };
 		425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */; };
 		425C58762F4F0F3C00EFBA4A /* MacroCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */; };
+		425C58782F4F13C300EFBA4A /* MissionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58772F4F13C000EFBA4A /* MissionDetailView.swift */; };
+		425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58792F4F351E00EFBA4A /* KineticSession.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -71,6 +73,8 @@
 		425C58712F4F0BF200EFBA4A /* hmPlan.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = hmPlan.csv; sourceTree = "<group>"; };
 		425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserEngine.swift; sourceTree = "<group>"; };
 		425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCycleView.swift; sourceTree = "<group>"; };
+		425C58772F4F13C000EFBA4A /* MissionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionDetailView.swift; sourceTree = "<group>"; };
+		425C58792F4F351E00EFBA4A /* KineticSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KineticSession.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -100,6 +104,7 @@
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				425C58772F4F13C000EFBA4A /* MissionDetailView.swift */,
 				4233D3112F4DC87200B948FA /* MetricCard.swift */,
 				4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */,
 				4233D3152F4DC98F00B948FA /* DashboardMenuButton.swift */,
@@ -122,6 +127,7 @@
 		4233D31D2F4DD8EC00B948FA /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				425C58792F4F351E00EFBA4A /* KineticSession.swift */,
 				42342F112F4F0223005F1CD3 /* ChassisSnapshot.swift */,
 				42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */,
 				42FAD52C2F4EF9340049BFEF /* TelemetryLog.swift */,
@@ -262,6 +268,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */,
+				425C58782F4F13C300EFBA4A /* MissionDetailView.swift in Sources */,
 				4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */,
 				4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
@@ -282,6 +289,7 @@
 				425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */,
 				4233D3012F4DB68400B948FA /* MissionView.swift in Sources */,
 				4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */,
+				425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */,
 				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,

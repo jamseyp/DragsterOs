@@ -1,36 +1,53 @@
 import Foundation
 import SwiftData
 
-// 📐 ARCHITECTURE: The structural tracking model for footwear.
-// This allows us to monitor the exact degradation of foam and carbon plates.
-
+// MARK: - 📐 STRUCTURAL TRACKING MODEL
+/// Monitors the exact degradation of foam and carbon plates over time.
 @Model
 final class RunningShoe {
     @Attribute(.unique) var id: UUID
-    var name: String
-    var terrainType: String // e.g., "Road", "Trail"
-    var purpose: String // e.g., "Speed", "Recovery", "Race"
+    var brand: String
+    var model: String
+    var terrainType: String
+    var purpose: String
     
-    // The degradation metrics
+    // DEGRADATION METRICS
     var currentMileage: Double
     var maxLifespan: Double
     var isActive: Bool
     
-    // Calculated property to determine the structural integrity (0.0 to 1.0)
+    // MARK: - 🧠 ALIASES FOR SYSTEM HARMONY
+    // These properties ensure SystemAlertManager and TireWearView both work.
+
+    /// Alias for SystemAlertManager: Returns 0.0 (new) to 1.0 (worn out)
     @Transient var integrityRatio: Double {
         return min(max(currentMileage / maxLifespan, 0.0), 1.0)
     }
+
+    /// Alias for SystemAlertManager: Returns the combined name
+    @Transient var name: String {
+        return "\(brand) \(model)"
+    }
+
+    /// Returns the percentage of lifespan remaining (1.0 = New, 0.0 = Dead)
+    @Transient var structuralIntegrity: Double {
+        let ratio = 1.0 - (currentMileage / maxLifespan)
+        return min(max(ratio, 0.0), 1.0)
+    }
     
+    // MARK: - 🛠️ INITIALIZER
     init(
-        name: String,
-        terrainType: String,
-        purpose: String,
+        brand: String,
+        model: String,
+        terrainType: String = "Road",
+        purpose: String = "Daily",
         currentMileage: Double = 0.0,
-        maxLifespan: Double = 500.0, // Standard 500km threshold
+        maxLifespan: Double = 500.0,
         isActive: Bool = true
     ) {
         self.id = UUID()
-        self.name = name
+        self.brand = brand
+        self.model = model
         self.terrainType = terrainType
         self.purpose = purpose
         self.currentMileage = currentMileage

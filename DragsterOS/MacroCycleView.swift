@@ -36,10 +36,16 @@ struct MacroCycleView: View {
                     
                     // THE TIMELINE
                     LazyVStack(spacing: 16) {
-                        ForEach(schedule) { mission in
-                            MacroCycleRow(mission: mission, isToday: mission.dateString == todayString)
-                        }
-                    }
+                                            ForEach(schedule) { mission in
+                                                // ✨ THE POLISH: We wrap the row in a routing link
+                                                NavigationLink(destination: MissionDetailView(mission: mission)) {
+                                                    MacroCycleRow(mission: mission, isToday: mission.dateString == todayString)
+                                                }
+                                                // This button style strips away the default blue iOS highlight,
+                                                // keeping our custom OLED-black and grey styling perfectly intact.
+                                                .buttonStyle(PlainButtonStyle())
+                                            }
+                                        }
                     .padding(.horizontal)
                 }
                 .padding(.bottom, 40)

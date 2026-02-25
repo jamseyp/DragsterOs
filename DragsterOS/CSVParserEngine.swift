@@ -1,9 +1,7 @@
 import Foundation
 
 // 📐 ARCHITECTURE: The Macro-Cycle Ingestion Engine.
-// Exclusively designed to parse the HMPlan.csv and generate dynamic daily missions.
-
-// 3️⃣ THE CSV INGESTION PIPELINE
+// Exclusively designed to parse the hmPlan.csv and generate dynamic daily missions.
 
 struct CSVParserEngine {
     
@@ -20,8 +18,9 @@ struct CSVParserEngine {
     }
     
     static func fetchFullMacroCycle() -> [TacticalMission] {
-        guard let filepath = Bundle.main.path(forResource: "HMPlan", ofType: "csv") else {
-            print("❌ SYSTEM FAULT: 'HMPlan.csv' not found. Check Xcode Target Membership.")
+        // ✨ THE FIX: Explicitly matching the exact lowercase file name in the bundle
+        guard let filepath = Bundle.main.path(forResource: "hmPlan", ofType: "csv") else {
+            print("❌ SYSTEM FAULT: 'hmPlan.csv' not found. Check Xcode Target Membership.")
             return []
         }
         
@@ -50,7 +49,8 @@ struct CSVParserEngine {
     }
     
     private static func parseCSV(lookingFor targetDate: String) -> TacticalMission? {
-        guard let filepath = Bundle.main.path(forResource: "HMPlan", ofType: "csv") else {
+        // ✨ THE FIX: Explicitly matching the exact lowercase file name
+        guard let filepath = Bundle.main.path(forResource: "hmPlan", ofType: "csv") else {
             print("❌ SYSTEM FAULT: 'hmPlan.csv' not found. Check Xcode Target Membership.")
             return nil
         }
@@ -77,7 +77,7 @@ struct CSVParserEngine {
         return nil
     }
     
-    // ✨ THE UPGRADE: A quote-aware algorithm that prevents commas inside notes from breaking the array
+    // ✨ A quote-aware algorithm that prevents commas inside notes from breaking the array
     private static func parseCSVRow(_ row: String) -> [String] {
         var result: [String] = []
         var current = ""
@@ -103,7 +103,9 @@ struct CSVParserEngine {
         let intensity = columns[4]
         let strength = columns[5]
         let fuelTier = columns[7]
-        let notes = columns[8]
+        
+        // Clean any leftover quotes from the notes column
+        let notes = columns[8].replacingOccurrences(of: "\"", with: "")
         
         var finalNotes = notes
         if strength.lowercased() != "rest" && !strength.isEmpty {
