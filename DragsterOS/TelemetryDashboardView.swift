@@ -59,7 +59,7 @@ struct TelemetryDashboardView: View {
                     // 4. DAILY MISSION
                     DailyMissionRow(task: currentTask)
                     
-              
+                    // 👉 INJECT THE NEW EVOLUTION CHART HERE
                     PerformanceEvolutionCard(data: weeklyTrendData)
                     
                     
