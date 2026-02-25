@@ -34,6 +34,13 @@
 		425C58762F4F0F3C00EFBA4A /* MacroCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */; };
 		425C58782F4F13C300EFBA4A /* MissionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58772F4F13C000EFBA4A /* MissionDetailView.swift */; };
 		425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58792F4F351E00EFBA4A /* KineticSession.swift */; };
+		425C587C2F4F6D4800EFBA4A /* roadmap.md in Resources */ = {isa = PBXBuildFile; fileRef = 425C587B2F4F6D3500EFBA4A /* roadmap.md */; };
+		425C587E2F4F711B00EFBA4A /* TacticalStatusHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C587D2F4F711700EFBA4A /* TacticalStatusHeader.swift */; };
+		425C58802F4F713E00EFBA4A /* BiometricMiniCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C587F2F4F713B00EFBA4A /* BiometricMiniCard.swift */; };
+		425C58822F4F716200EFBA4A /* ReadinessBatteryBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58812F4F716100EFBA4A /* ReadinessBatteryBar.swift */; };
+		425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */; };
+		425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */; };
+		425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -75,6 +82,13 @@
 		425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCycleView.swift; sourceTree = "<group>"; };
 		425C58772F4F13C000EFBA4A /* MissionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionDetailView.swift; sourceTree = "<group>"; };
 		425C58792F4F351E00EFBA4A /* KineticSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KineticSession.swift; sourceTree = "<group>"; };
+		425C587B2F4F6D3500EFBA4A /* roadmap.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = roadmap.md; sourceTree = "<group>"; };
+		425C587D2F4F711700EFBA4A /* TacticalStatusHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TacticalStatusHeader.swift; sourceTree = "<group>"; };
+		425C587F2F4F713B00EFBA4A /* BiometricMiniCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiometricMiniCard.swift; sourceTree = "<group>"; };
+		425C58812F4F716100EFBA4A /* ReadinessBatteryBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessBatteryBar.swift; sourceTree = "<group>"; };
+		425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualTelemetrySheet.swift; sourceTree = "<group>"; };
+		425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessTrendChart.swift; sourceTree = "<group>"; };
+		425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryChartCard.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -104,6 +118,12 @@
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */,
+				425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */,
+				425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */,
+				425C58812F4F716100EFBA4A /* ReadinessBatteryBar.swift */,
+				425C587F2F4F713B00EFBA4A /* BiometricMiniCard.swift */,
+				425C587D2F4F711700EFBA4A /* TacticalStatusHeader.swift */,
 				425C58772F4F13C000EFBA4A /* MissionDetailView.swift */,
 				4233D3112F4DC87200B948FA /* MetricCard.swift */,
 				4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */,
@@ -173,6 +193,7 @@
 				42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */,
 				42B884E02F4C942100A50290 /* Preview Content */,
 				4233D2FC2F4DB52500B948FA /* GarageLogView.swift */,
+				425C587B2F4F6D3500EFBA4A /* roadmap.md */,
 				4233D2FE2F4DB65B00B948FA /* MissionControl.swift */,
 				4233D3002F4DB68400B948FA /* MissionView.swift */,
 				4233D3022F4DB93300B948FA /* TireWearManager.swift */,
@@ -254,6 +275,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				425C58722F4F0BF200EFBA4A /* hmPlan.csv in Resources */,
+				425C587C2F4F6D4800EFBA4A /* roadmap.md in Resources */,
 				42B884E22F4C942100A50290 /* Preview Assets.xcassets in Resources */,
 				42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */,
 				42B884DE2F4C942100A50290 /* Assets.xcassets in Resources */,
@@ -272,8 +294,10 @@
 				4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */,
 				4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
+				425C58822F4F716200EFBA4A /* ReadinessBatteryBar.swift in Sources */,
 				4233D32D2F4DDC5700B948FA /* PerformanceEngine.swift in Sources */,
 				4233D32F2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift in Sources */,
+				425C587E2F4F711B00EFBA4A /* TacticalStatusHeader.swift in Sources */,
 				42342F142F4F02F2005F1CD3 /* SystemAlertManager.swift in Sources */,
 				42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */,
 				4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */,
@@ -289,7 +313,11 @@
 				425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */,
 				4233D3012F4DB68400B948FA /* MissionView.swift in Sources */,
 				4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */,
+				425C58802F4F713E00EFBA4A /* BiometricMiniCard.swift in Sources */,
+				425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */,
+				425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */,
 				425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */,
+				425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */,
 				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,

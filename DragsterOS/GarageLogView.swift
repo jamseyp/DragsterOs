@@ -20,7 +20,7 @@ struct GarageLogView: View {
     // MARK: - 🖼️ UI BODY
     var body: some View {
         ZStack {
-            // Theme-aware background (Aluminum in Light, OLED in Dark)
+            // Theme-aware background
             ColorTheme.background.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
@@ -40,7 +40,7 @@ struct GarageLogView: View {
                     
                     // MARK: 📜 TIMELINE
                     if sessions.isEmpty {
-                        /// Standardized Empty State: Shown when database is purged or fresh
+                        /// Standardized Empty State
                         ContentUnavailableView(
                             "NO MISSIONS LOGGED",
                             systemImage: "bolt.slash.fill",
@@ -48,7 +48,7 @@ struct GarageLogView: View {
                         )
                         .foregroundStyle(ColorTheme.prime)
                     } else {
-                        /// LazyVStack ensures performance remains fluid even with hundreds of logs
+                        /// LazyVStack ensures performance remains fluid
                         LazyVStack(spacing: 16) {
                             ForEach(sessions) { session in
                                 NavigationLink(destination: SessionDetailCanvas(session: session)) {
@@ -96,64 +96,72 @@ struct GarageLogView: View {
         }
     }
     
-    // MARK: - 🧠 LOGIC: HISTORICAL SYNC
-    /// Reaches back 30 days into Apple Health to find workouts.
-    /// Uses a 60-second proximity check to prevent duplicate entries from multiple syncs.
+    // MARK: - 🧠 LOGIC: HISTORICAL SYNC (SCALARS)
     private func ingestHistoricalData() async {
         isSyncingHistory = true
         
-        
-        
         do {
             let historicalWorkouts = try await healthManager.fetchHistoricalWorkouts(daysBack: 30)
+            var newSessions: [KineticSession] = []
             
-            await MainActor.run {
-                var addedCount = 0
-                for workout in historicalWorkouts {
-                    // 🛡️ ANTI-CLONING LOGIC:
-                    // Verify if we already have this workout by checking the start time.
-                    let alreadyExists = sessions.contains {
-                        abs($0.date.timeIntervalSince(workout.startDate)) < 60
-                    }
-                    
-                    if !alreadyExists {
-                        // 🛠️ DATA TRANSLATION: Map Apple types to Dragster OS internal schema
-                        let duration = workout.duration / 60.0
-                        var distance = 0.0
-                        if let dist = workout.totalDistance?.doubleValue(for: .meter()) {
-                            distance = dist / 1000.0
-                        }
-                        
-                        var discipline = "OTHER"
-                        switch workout.workoutActivityType {
-                        case .running: discipline = "RUN"
-                        case .cycling: discipline = "SPIN"
-                        case .rowing: discipline = "ROW"
-                        case .traditionalStrengthTraining, .functionalStrengthTraining: discipline = "STRENGTH"
-                        default: continue
-                        }
-                        
-                        let importedSession = KineticSession(
-                            date: workout.startDate,
-                            discipline: discipline,
-                            durationMinutes: duration,
-                            distanceKM: distance,
-                            averageHR: 0.0, // Historical HR requires batch statistics query (Phase 5)
-                            rpe: 5,
-                            coachNotes: "System Import: Apple Health"
-                        )
-                        context.insert(importedSession)
-                        addedCount += 1
-                    }
+            for workout in historicalWorkouts {
+                // Anti-cloning logic
+                let alreadyExists = sessions.contains {
+                    abs($0.date.timeIntervalSince(workout.startDate)) < 60
                 }
                 
-                if addedCount > 0 {
+                if !alreadyExists {
+                    let duration = workout.duration / 60.0
+                    var distance = 0.0
+                    if let dist = workout.totalDistance?.doubleValue(for: .meter()) {
+                        distance = dist / 1000.0
+                    }
+                    
+                    var discipline = "OTHER"
+                    switch workout.workoutActivityType {
+                    case .running: discipline = "RUN"
+                    case .cycling: discipline = "SPIN"
+                    case .rowing: discipline = "ROW"
+                    case .traditionalStrengthTraining, .functionalStrengthTraining: discipline = "STRENGTH"
+                    default: continue
+                    }
+                    
+                    let isRide = (discipline == "SPIN")
+                    
+                    // ✨ THE UPGRADE: Fetch ALL Scalar Averages correctly
+                    let trueAvgHR = await healthManager.fetchAverageHR(for: workout)
+                    let trueAvgPower = await healthManager.fetchAveragePower(for: workout, isRide: isRide)
+                    let trueAvgCadence = await healthManager.fetchAverageCadence(for: workout, isRide: isRide)
+                    
+                    let importedSession = KineticSession(
+                        date: workout.startDate,
+                        discipline: discipline,
+                        durationMinutes: duration,
+                        distanceKM: distance,
+                        averageHR: trueAvgHR,
+                        rpe: 5, // Subjective, defaults to 5
+                        coachNotes: "System Import: Apple Health",
+                        avgCadence: trueAvgCadence > 0 ? trueAvgCadence : nil, // Now Saved!
+                        avgPower: trueAvgPower > 0 ? trueAvgPower : nil        // Now Saved!
+                    )
+                    
+                    newSessions.append(importedSession)
+                }
+            }
+            
+            // Push UI updates back to the Main Actor
+            await MainActor.run {
+                if !newSessions.isEmpty {
+                    for session in newSessions {
+                        context.insert(session)
+                    }
                     try? context.save()
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 } else {
                     UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                 }
             }
+            
         } catch {
             print("❌ Sync Fault: \(error)")
         }
@@ -163,13 +171,11 @@ struct GarageLogView: View {
 }
 
 // MARK: - 🃏 COMPONENT: SUMMARY CARD
-/// The high-level row component. Designed for quick scannability of key metrics.
 struct SessionSummaryCard: View {
     let session: KineticSession
     
     var body: some View {
         HStack(spacing: 16) {
-            // ICON BLOCK: Discipline-specific glyph with dynamic coloring
             VStack {
                 Image(systemName: session.disciplineIcon)
                     .font(.system(size: 20))
@@ -179,7 +185,6 @@ struct SessionSummaryCard: View {
             .background(session.disciplineColor)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // DATA BLOCK: Metrics & Identification
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(session.discipline)
@@ -208,17 +213,20 @@ struct SessionSummaryCard: View {
     }
 }
 
-// MARK: - 🔍 VIEW: DETAIL CANVAS
-/// The drill-down telemetry view. Merges mission data with daily biological context
-/// and provides the AI coaching export pipeline.
+// MARK: - 🔍 VIEW: DETAIL CANVAS (VECTOR EDITION)
 struct SessionDetailCanvas: View {
     let session: KineticSession
     
-    // Access logs to find Morning Readiness for the day this session occurred
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Environment(\.dismiss) private var dismiss
     
-    // MARK: 🧠 CALCULATED METRICS
+    // ✨ NEW: JIT (Just-In-Time) Data Arrays for Charts
+    @State private var healthManager = HealthKitManager.shared
+    @State private var hrArray: [(Date, Double)] = []
+    @State private var powerArray: [(Date, Double)] = []
+    @State private var cadenceArray: [(Date, Double)] = []
+    @State private var isLoadingVectors = true
+    
     private var morningReadiness: Int? {
         let log = logs.first { Calendar.current.isDate($0.date, inSameDayAs: session.date) }
         return log != nil ? Int(log!.readinessScore) : nil
@@ -242,7 +250,7 @@ struct SessionDetailCanvas: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
                     
-                    // MARK: 🤖 AI EXPORT PIPELINE
+                    // 1. AI EXPORT PIPELINE
                     Button(action: {
                         let excerpt = session.generateFullTacticalExcerpt(readiness: morningReadiness)
                         UIPasteboard.general.string = excerpt
@@ -258,7 +266,7 @@ struct SessionDetailCanvas: View {
                     }
                     .padding(.horizontal)
 
-                    // MARK: 🏆 HERO METRICS
+                    // 2. HERO METRICS
                     VStack(spacing: 8) {
                         Image(systemName: session.disciplineIcon)
                             .font(.system(size: 40))
@@ -267,8 +275,9 @@ struct SessionDetailCanvas: View {
                             .font(.system(size: 56, weight: .heavy, design: .rounded))
                             .foregroundStyle(ColorTheme.textPrimary)
                     }
+                    .padding(.top, 20)
 
-                    // MARK: 📊 TELEMETRY GRID: KINETICS
+                    // 3. SCALAR GRID: KINETICS (Restored Values!)
                     HStack(spacing: 12) {
                         TelemetryBlock(title: "AVG POWER", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
                         TelemetryBlock(title: "CADENCE", value: session.avgCadence != nil ? "\(Int(session.avgCadence!))" : "-", unit: "SPM")
@@ -276,22 +285,40 @@ struct SessionDetailCanvas: View {
                     }
                     .padding(.horizontal)
 
-                    // MARK: 📊 TELEMETRY GRID: BIOMETRICS
+                    // 4. SCALAR GRID: BIOMETRICS
                     HStack(spacing: 12) {
                         TelemetryBlock(title: "READINESS", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
                         TelemetryBlock(title: "AVG HR", value: "\(Int(session.averageHR))", unit: "BPM")
                         TelemetryBlock(title: "EFFORT", value: "\(session.rpe)", unit: "/10")
                     }
                     .padding(.horizontal)
+
+                    // ✨ 5. VECTOR CHARTS (JIT Rendered)
+                    VStack(spacing: 16) {
+                        if isLoadingVectors {
+                            ProgressView().tint(ColorTheme.prime).padding(.vertical, 40)
+                        } else {
+                            if !hrArray.isEmpty {
+                                TelemetryChartCard(title: "HEART RATE VECTOR", icon: "heart.fill", data: hrArray, color: ColorTheme.critical, unit: "BPM")
+                            }
+                            if !powerArray.isEmpty {
+                                TelemetryChartCard(title: "MECHANICAL POWER", icon: "bolt.fill", data: powerArray, color: .orange, unit: "W")
+                            }
+                            if !cadenceArray.isEmpty {
+                                TelemetryChartCard(title: "CADENCE SPARKLINE", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "SPM")
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
                     
-                    // MARK: 👟 EQUIPMENT MAPPING
+                    // 6. CHASSIS / EQUIPMENT
                     if let shoe = session.shoeName {
                         Label("CHASSIS: \(shoe.uppercased())", systemImage: "shoe.2.fill")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                     }
 
-                    // MARK: 📝 ATHLETE NOTES
+                    // 7. ATHLETE NOTES
                     if !session.coachNotes.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("ATHLETE NOTES").font(.system(size: 12, weight: .black, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
@@ -301,6 +328,22 @@ struct SessionDetailCanvas: View {
                     }
                 }
                 .padding(.bottom, 40)
+            }
+        }
+        .task {
+            // ✨ THE JIT TRIGGER: Fetch the raw arrays exactly when the user opens the canvas
+            let isRide = session.discipline == "SPIN"
+            async let fetchedHR = healthManager.fetchHRSeries(start: session.date, durationMinutes: session.durationMinutes)
+            async let fetchedPower = healthManager.fetchPowerSeries(start: session.date, durationMinutes: session.durationMinutes, isRide: isRide)
+            async let fetchedCadence = healthManager.fetchCadenceSeries(start: session.date, durationMinutes: session.durationMinutes, isRide: isRide)
+            
+            let (hrRes, pwrRes, cadRes) = await (fetchedHR, fetchedPower, fetchedCadence)
+            
+            await MainActor.run {
+                self.hrArray = hrRes
+                self.powerArray = pwrRes
+                self.cadenceArray = cadRes
+                self.isLoadingVectors = false
             }
         }
     }
@@ -319,21 +362,16 @@ struct TelemetryBlock: View {
     }
 }
 
-// MARK: - 📝 SHEET: HYBRID INPUT (v2.0)
-/// Advanced data ingestion sheet with HealthKit autofill and Equipment Odometer synchronization.
+// MARK: - 📝 SHEET: HYBRID INPUT
 struct AddSessionSheet: View {
-    
-    // MARK: 🛠️ PERSISTENCE & SERVICES
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \RunningShoe.brand) private var inventory: [RunningShoe]
     @State private var healthManager = HealthKitManager.shared
     
-    // MARK: ⌚ SYNC STATE
     @State private var isSyncingWatch = true
     @State private var watchWorkoutFound = false
     
-    // MARK: 🧬 INPUT DATA
     @State private var selectedDiscipline = "RUN"
     let disciplines = ["RUN", "ROW", "SPIN", "STRENGTH"]
     
@@ -346,25 +384,21 @@ struct AddSessionSheet: View {
     @State private var selectedShoe: RunningShoe?
     @State private var notes: String = ""
     
-    // MARK: 🖼️ UI BODY
     var body: some View {
         NavigationStack {
             ZStack {
                 ColorTheme.background.ignoresSafeArea()
                 Form {
-                    // --- SECTION 1: AUTOFILL STATUS ---
                     if isSyncingWatch {
                         Section {
                             HStack { ProgressView().tint(ColorTheme.prime); Text("LINKING HEALTHKIT...").font(.caption.monospaced()).foregroundStyle(ColorTheme.textMuted) }
                         }.listRowBackground(Color.clear)
                     }
                     
-                    // --- SECTION 2: DISCIPLINE SELECTOR ---
                     Section(header: Text("DISCIPLINE").font(.caption.monospaced())) {
                         Picker("Mode", selection: $selectedDiscipline) { ForEach(disciplines, id: \.self) { Text($0) } }.pickerStyle(.segmented).listRowBackground(Color.clear)
                     }
                     
-                    // --- SECTION 3: KINETIC OUTPUT (Mechanical Work) ---
                     Section(header: Text("KINETIC OUTPUT").font(.caption.monospaced())) {
                         if selectedDiscipline != "STRENGTH" {
                             VStack(alignment: .leading) { Text("Distance: \(distance, specifier: "%.1f") km").foregroundStyle(ColorTheme.prime); Slider(value: $distance, in: 0...42, step: 0.1) }
@@ -374,23 +408,21 @@ struct AddSessionSheet: View {
                         VStack(alignment: .leading) { Text("Duration: \(Int(duration)) min").foregroundStyle(ColorTheme.prime); Slider(value: $duration, in: 0...180, step: 1) }
                     }.listRowBackground(ColorTheme.panel)
                     
-                    // --- SECTION 4: BIOMETRIC LOAD (Biological Cost) ---
                     Section(header: Text("BIOMETRIC LOAD").font(.caption.monospaced())) {
                         VStack(alignment: .leading) { Text("Avg HR: \(Int(averageHR)) BPM").foregroundStyle(ColorTheme.critical); Slider(value: $averageHR, in: 80...200, step: 1) }
                         VStack(alignment: .leading) { Text("RPE: \(Int(rpe))/10").foregroundStyle(ColorTheme.warning); Slider(value: $rpe, in: 1...10, step: 1) }
                     }.listRowBackground(ColorTheme.panel)
                     
-                    // --- SECTION 5: CHASSIS SELECTION (Runs Only) ---
                     if selectedDiscipline == "RUN" {
                         Section(header: Text("CHASSIS (SHOES)").font(.caption.monospaced())) {
                             Picker("Active Shoe", selection: $selectedShoe) {
                                 Text("NO SHOE SELECTED").tag(nil as RunningShoe?)
-                                ForEach(inventory) { shoe in Text("\(shoe.brand) \(shoe.model)").tag(shoe as RunningShoe?) }
+                                // ✨ ALIAS FIX
+                                ForEach(inventory) { shoe in Text(shoe.name).tag(shoe as RunningShoe?) }
                             }.tint(ColorTheme.prime)
                         }.listRowBackground(ColorTheme.panel)
                     }
                     
-                    // --- SECTION 6: NOTES ---
                     Section(header: Text("DEBRIEF").font(.caption.monospaced())) {
                         TextField("Athlete Notes...", text: $notes, axis: .vertical).lineLimit(3).foregroundStyle(ColorTheme.textPrimary)
                     }.listRowBackground(ColorTheme.panel)
@@ -406,13 +438,25 @@ struct AddSessionSheet: View {
         }
     }
     
-    // MARK: 🧠 LOGIC: AUTOFILL & PERSISTENCE
+    // MARK: 🧠 LOGIC: AUTOFILL
     private func autofillFromAppleHealth() async {
         isSyncingWatch = true
         if let workout = try? await healthManager.fetchLatestWorkout() {
+            
+            let isRide = (workout.workoutActivityType == .cycling)
+            // ✨ THE FIX: Fetch ALL Scalars for the manual input sliders
+            let fetchedHR = await healthManager.fetchAverageHR(for: workout)
+            let fetchedPower = await healthManager.fetchAveragePower(for: workout, isRide: isRide)
+            let fetchedCadence = await healthManager.fetchAverageCadence(for: workout, isRide: isRide)
+            
             await MainActor.run {
                 self.duration = workout.duration / 60.0
                 if let dist = workout.totalDistance?.doubleValue(for: .meter()) { self.distance = dist / 1000.0 }
+                
+                if fetchedHR > 0 { self.averageHR = fetchedHR }
+                if fetchedPower > 0 { self.avgPower = fetchedPower }
+                if fetchedCadence > 0 { self.avgCadence = fetchedCadence }
+                
                 switch workout.workoutActivityType {
                 case .running: self.selectedDiscipline = "RUN"
                 case .cycling: self.selectedDiscipline = "SPIN"
@@ -426,7 +470,6 @@ struct AddSessionSheet: View {
     }
     
     private func saveSession() {
-        // 1. Construct the new session object
         let newSession = KineticSession(
             date: .now,
             discipline: selectedDiscipline,
@@ -437,23 +480,11 @@ struct AddSessionSheet: View {
             coachNotes: notes,
             avgCadence: selectedDiscipline == "STRENGTH" ? nil : avgCadence,
             avgPower: selectedDiscipline == "STRENGTH" ? nil : avgPower,
-            shoeName: selectedShoe != nil ? "\(selectedShoe!.brand) \(selectedShoe!.model)" : nil
+            shoeName: selectedShoe?.name
         )
-        
-        // 🛠️ 2. Update the Chassis Odometer (Shoes)
-        if let shoe = selectedShoe, selectedDiscipline == "RUN" {
-            shoe.currentMileage += distance
-        }
-        
-        // 3. Commit to SwiftData context
+        if let shoe = selectedShoe, selectedDiscipline == "RUN" { shoe.currentMileage += distance }
         context.insert(newSession)
-        
-        do {
-            try context.save()
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            dismiss()
-        } catch {
-            print("❌ Persistence Fault: \(error)")
-        }
+        try? context.save()
+        UINotificationFeedbackGenerator().notificationOccurred(.success); dismiss()
     }
 }
