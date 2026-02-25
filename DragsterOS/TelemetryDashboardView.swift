@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TelemetryDashboardView: View {
-    @StateObject var engine = TelemetryManager()
+    @State var engine = TelemetryManager()
     @Environment(\.dismiss) var dismiss
     
     // ⚙️ THE NEW STATE LAYER

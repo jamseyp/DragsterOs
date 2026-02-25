@@ -1,145 +1,136 @@
 import SwiftUI
-import CoreData
+import SwiftData
+
+// 📐 ARCHITECTURE: The Ultimate Command Center.
+// Automates data ingestion, processes background alerts, and routes to all subsystems.
 
 struct ContentView: View {
-    // 1. DATABASE CONNECTIVITY
-    @Environment(\.managedObjectContext) private var viewContext
+    // 1. SWIFTDATA & SENSORS
+    @Environment(\.modelContext) private var context
+    @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     
-    // 2. INPUT STATE (The Sensors)
-    @State private var hrvValue: Double = 5.0
-    @State private var sleepValue: Double = 5.0
-    @State private var sorenessValue: Double = 5.0
+    @State private var healthManager = HealthKitManager.shared
+    @State private var alertManager = SystemAlertManager.shared
+    @State private var isSyncing: Bool = true
     
-    // 3. THE ENGINE
-    let engine = ReadinessEngine()
-    
-    // 4. COMPUTED PROPERTY FOR THE GAUGE
-    var readinessScore: Double {
-        // Since ReadinessEngine returns an Int out of 100, we convert it for the UI
-        engine.calculateScore(hrv: hrvValue, sleepHours: sleepValue, rhr: PerformanceConstants.baselineRHR, baselineHRV: PerformanceConstants.baselineHRV)
+    var currentReadiness: Double {
+        logs.first?.readinessScore ?? 0.0
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
-                // THE CANVAS: Pure black background for the dashboard
-                Color.black.ignoresSafeArea()
+                ColorTheme.background.ignoresSafeArea()
                 
-                // THE SUSPENSION (Allows scrolling to prevent overlapping)
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 30) {
                         
-                        // 1️⃣ THE GAUGE DISPLAY
+                        // 1️⃣ PRIME METRIC: SYSTEM READINESS
                         VStack {
-                            Text("DRAGSTER READINESS")
-                                .font(.caption)
+                            Text("SYSTEM READINESS")
+                                .font(.caption.monospaced().bold())
                                 .tracking(2)
-                                .foregroundColor(.gray)
+                                .foregroundStyle(ColorTheme.textMuted)
                             
-                            // Fixed string interpolation
-                            Text(String(format: "%.1f", readinessScore))
-                                .font(.system(size: 80, weight: .black, design: .monospaced))
-                                .foregroundColor(scoreColor)
-                                .shadow(color: scoreColor.opacity(0.4), radius: 15, x: 0, y: 0)
+                            ReadinessGauge(score: currentReadiness)
+                            
+                            if isSyncing {
+                                Text("SYNCING BIOMETRICS...")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(ColorTheme.prime)
+                                    .opacity(0.8)
+                                    .animation(.easeInOut(duration: 1.0).repeatForever(), value: isSyncing)
+                            }
                         }
                         .padding(.top, 20)
                         
-                        Divider().background(Color.white.opacity(0.2)).padding(.horizontal)
+                        Divider().background(ColorTheme.surfaceBorder).padding(.horizontal)
                         
-                        // 2️⃣ THE INPUTS (SLIDERS)
-                        VStack(alignment: .leading, spacing: 25) {
-                            MetricSlider(label: "HRV (Nervous System)", value: $hrvValue, icon: "bolt.heart.fill")
-                            MetricSlider(label: "Sleep (Recovery)", value: $sleepValue, icon: "moon.stars.fill")
-                            MetricSlider(label: "Soreness (Chassis)", value: $sorenessValue, icon: "figure.walk")
-                        }
-                        .padding(.horizontal)
-                        
-                        // 3️⃣ THE IGNITION BUTTON (SAVE)
-                        Button(action: saveEntry) {
-                            Label("SAVE TO PADDOCK", systemImage: "square.and.arrow.down.fill")
-                                .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color(white: 0.15)) // Sleek dark button
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.red, lineWidth: 2) // Neon red accent
-                                )
-                                .cornerRadius(12)
-                        }
-                        .padding(.horizontal)
-                        
-                        Divider().background(Color.white.opacity(0.2)).padding(.horizontal)
-                        
-                        // 4️⃣ THE PADDOCK MODULES
+                        // 2️⃣ THE ROUTING GRID (All Subsystems)
                         VStack(spacing: 12) {
-                            NavigationLink(destination: PaddockView()) {
-                                DashboardMenuButton(title: "LIVE SENSOR TELEMETRY", icon: "waveform.path.ecg", color: .orange)
-                            }
-                            NavigationLink(destination: TelemetryDashboardView()) {
-                                DashboardMenuButton(title: "VIEW MORNING REPORT", icon: "chart.bar.xaxis", color: .cyan)
+                            // Phase 1: Inputs
+                            NavigationLink(destination: MissionView()) {
+                                DashboardMenuButton(title: "TACTICAL BRIEFING", icon: "list.clipboard.fill", color: ColorTheme.prime)
                             }
                             NavigationLink(destination: GarageLogView()) {
-                                DashboardMenuButton(title: "OPEN GARAGE LOG", icon: "list.dash.header.rectangle", color: .purple)
+                                DashboardMenuButton(title: "KINETIC LOGBOOK", icon: "bolt.fill", color: ColorTheme.warning)
                             }
-                            NavigationLink(destination: MissionView()) {
-                                DashboardMenuButton(title: "PADDOCK WHITEBOARD", icon: "list.clipboard.fill", color: .green)
+                            
+                            // Phase 2: Analytics
+                            NavigationLink(destination: ChassisView()) {
+                                DashboardMenuButton(title: "MASS & EFFICIENCY (W/kg)", icon: "scalemass.fill", color: ColorTheme.recovery)
                             }
                             NavigationLink(destination: TireWearView()) {
-                                DashboardMenuButton(title: "TIRE WEAR INVENTORY", icon: "shoe.2.fill", color: .yellow)
+                                DashboardMenuButton(title: "EQUIPMENT INVENTORY", icon: "shoe.2.fill", color: .orange)
                             }
-                            NavigationLink(destination: ChassisView()) {
-                                DashboardMenuButton(title: "CHASSIS TUNING (W/kg)", icon: "scalemass.fill", color: .white)
-                            }
-                            NavigationLink(destination: PitStopView()) {
-                                DashboardMenuButton(title: "PIT STOP TIMER", icon: "timer", color: .red)
+                            
+                            // Phase 3: Strategy
+                            NavigationLink(destination: PaddockView()) {
+                                DashboardMenuButton(title: "PREDICTIVE RACE STRATEGY", icon: "flag.checkered", color: ColorTheme.strategy)
                             }
                         }
                         .padding(.horizontal)
                         
-                        // 5️⃣ FOOTER
-                        Text("RACING SUNDAY: BEACON FELL 10K")
+                        // 3️⃣ TARGET LOCK
+                        Text("NEXT MILESTONE: BEACON FELL 10K")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
-                            .foregroundColor(.red)
+                            .foregroundStyle(ColorTheme.critical)
                             .padding(8)
-                            .background(Color.red.opacity(0.1))
-                            .cornerRadius(5)
+                            .background(ColorTheme.critical.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 5))
                             .padding(.bottom, 20)
                     }
                 }
             }
-            // Enforce Dark Mode on the Navigation Bar
             .preferredColorScheme(.dark)
-            .navigationBarHidden(true)
+            .task {
+                await bootSystem()
+            }
         }
     }
     
-    // COLOR LOGIC
-    var scoreColor: Color {
-        if readinessScore >= 7.5 { return .cyan } // Peak Performance Color
-        if readinessScore >= 5.0 { return .green }
-        return .red
-    }
+    // MARK: - ⚙️ Boot Sequence
     
-    // MECHANICAL LOGIC: SAVING TO CORE DATA
-    private func saveEntry() {
-        let newEntry = LogEntry(context: viewContext)
-        newEntry.date = Date()
-        newEntry.hrv = hrvValue
-        newEntry.sleep = sleepValue
-        newEntry.soreness = sorenessValue
-        newEntry.score = readinessScore
-
+    private func bootSystem() async {
+        isSyncing = true
+        defer { isSyncing = false }
+        
         do {
-            try viewContext.save()
-            // 🏎️ THE HAPTIC "CLUNK"
-            let impact = UIImpactFeedbackGenerator(style: .rigid)
-            impact.impactOccurred()
-            print("✅ Telemetry Saved to Paddock.")
+            // 1. Initialize permissions
+            await alertManager.requestAuthorization()
+            try await healthManager.requestAuthorization()
+            
+            // 2. Fetch live data
+            let metrics = try await healthManager.fetchMorningReadiness()
+            let calculatedScore = ReadinessEngine.computeReadiness(
+                todayHRV: metrics.hrv,
+                todaySleep: metrics.sleepHours,
+                history: logs
+            )
+            
+            // 3. Persist to SwiftData
+            let startOfDay = Calendar.current.startOfDay(for: .now)
+            if let existingLog = logs.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) }) {
+                existingLog.hrv = metrics.hrv
+                existingLog.restingHR = metrics.restingHR
+                existingLog.sleepDuration = metrics.sleepHours
+                existingLog.readinessScore = calculatedScore
+            } else {
+                let newLog = TelemetryLog(
+                    date: .now, hrv: metrics.hrv, restingHR: metrics.restingHR,
+                    sleepDuration: metrics.sleepHours, readinessScore: calculatedScore
+                )
+                context.insert(newLog)
+            }
+            
+            // 4. Background Physiological Scan (Triggers Push Notifications if critical)
+            alertManager.evaluatePhysiologicalLoad(currentReadiness: calculatedScore)
+            
+            // Haptic confirmation
+            await MainActor.run { UIImpactFeedbackGenerator(style: .rigid).impactOccurred() }
+            
         } catch {
-            print("❌ Engine Fault: Could not save data.")
+            print("❌ Boot Fault: \(error.localizedDescription)")
         }
     }
 }
-

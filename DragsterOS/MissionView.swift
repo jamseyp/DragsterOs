@@ -1,109 +1,161 @@
 import SwiftUI
+import SwiftData
+
+// 🎨 ARCHITECTURE: A highly stylized, dynamic Whiteboard.
+// It queries the live Readiness Score from SwiftData and feeds it into the MissionEngine.
 
 struct MissionView: View {
-    @StateObject var manager = MissionManager()
+    @Environment(\.dismiss) private var dismiss
     
-    // 1. THE NAVIGATION CONTROLLER
-    @Environment(\.dismiss) var dismiss
+    // 1. SWIFTDATA INTEGRATION
+    @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
+    
+    // 2. STATE
+    @State private var todaysMission: TacticalMission?
+    @State private var hasAnimated: Bool = false
+    
+    // Calculate current readiness from the database
+    private var currentReadiness: Double {
+        let startOfDay = Calendar.current.startOfDay(for: .now)
+        let todayLog = logs.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) })
+        return todayLog?.readinessScore ?? 100.0 // Default to 100 if no data yet
+    }
     
     var body: some View {
         ZStack {
+            // Pure Black Canvas
             Color.black.ignoresSafeArea()
-            // 2. THE CUSTOM BACK BUTTON
-            Button(action: {
-                dismiss()
-            }) {
-                HStack(spacing: 6) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 14, weight: .bold))
-                    Text("DASHBOARD")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                }
-                .foregroundColor(.gray)
-            }
-            .padding(.top, 20)
-            .padding(.horizontal)
             
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 24) {
                 // HEADER
-                HStack {
-                    Text("TODAY's MISSION")
-                        .font(.system(size: 28, weight: .black, design: .monospaced))
-                        .foregroundColor(.white)
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("TACTICAL BRIEFING")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.gray)
+                        
+                        Text(Date().formatted(.dateTime.month().day().weekday(.wide)).uppercased())
+                            .font(.system(size: 28, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
                     Spacer()
-                    Text(manager.todaysMission.date)
-                        .font(.headline)
-                        .foregroundColor(.gray)
-                }
-                .padding(.top)
-                
-                // THE ACTIVITY BLOCK
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("PRIMARY WORKOUT")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.gray)
                     
-                    Text(manager.todaysMission.activity)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.cyan)
-                    
-                    HStack {
-                        Image(systemName: "bolt.fill")
-                            .foregroundColor(.yellow)
-                        Text("TARGET: \(manager.todaysMission.powerTarget)")
-                            .font(.system(.body, design: .monospaced))
-                            .foregroundColor(.white)
+                    // The Readiness Badge
+                    VStack(alignment: .trailing) {
+                        Text("READINESS")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.gray)
+                        Text("\(Int(currentReadiness))")
+                            .font(.system(size: 24, weight: .black, design: .monospaced))
+                            .foregroundStyle(currentReadiness < 40 ? .red : .cyan)
+                            .contentTransition(.numericText())
                     }
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(white: 0.15))
-                .cornerRadius(12)
+                .padding(.top, 20)
                 
-                // THE FUEL MAP BLOCK
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("FUEL MAP")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.gray)
-                    
-                    Text(manager.todaysMission.fuel.rawValue)
-                        .font(.headline)
-                        .foregroundColor(manager.todaysMission.fuel.color)
-                    
-                    Text("MACROS: \(manager.todaysMission.fuel.macros)")
-                        .font(.system(size: 14, weight: .bold, design: .monospaced))
-                        .foregroundColor(.white)
+                Divider().background(Color.white.opacity(0.2))
+                
+                if let mission = todaysMission {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 16) {
+                            
+                            // 🚨 OVERRIDE WARNING
+                            if mission.isAltered {
+                                HStack {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                    Text("SYSTEM OVERRIDE ENGAGED")
+                                        .font(.system(size: 12, weight: .heavy, design: .monospaced))
+                                }
+                                .foregroundStyle(.black)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color.red)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                // Fluid pulse animation for the warning
+                                .opacity(hasAnimated ? 1.0 : 0.6)
+                                .animation(.easeInOut(duration: 1.0).repeatForever(), value: hasAnimated)
+                            }
+                            
+                            // 1️⃣ THE OBJECTIVE
+                            MissionCard(
+                                title: "PRIMARY OBJECTIVE",
+                                icon: "target",
+                                color: mission.isAltered ? .red : .cyan
+                            ) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(mission.title)
+                                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                    
+                                    HStack {
+                                        Image(systemName: "bolt.fill")
+                                        Text("TARGET: \(mission.powerTarget)")
+                                            .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                    }
+                                    .foregroundStyle(mission.isAltered ? .red : .yellow)
+                                }
+                            }
+                            
+                            // 2️⃣ THE FUEL MAP
+                            MissionCard(
+                                title: "FUEL INJECTION",
+                                icon: "flame.fill",
+                                color: mission.fuel.color
+                            ) {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(mission.fuel.rawValue)
+                                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                                        .foregroundStyle(mission.fuel.color)
+                                    
+                                    Text(mission.fuel.macros)
+                                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                        .foregroundStyle(.white.opacity(0.8))
+                                }
+                            }
+                            
+                            // 3️⃣ PIT WALL NOTES
+                            MissionCard(
+                                title: "PIT WALL TRANSMISSION",
+                                icon: "waveform",
+                                color: .purple
+                            ) {
+                                Text(mission.coachNotes)
+                                    .font(.system(size: 16, weight: .medium, design: .default))
+                                    .italic()
+                                    .foregroundStyle(.white)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                } else {
+                    Spacer()
+                    ProgressView().tint(.cyan)
+                    Spacer()
                 }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(white: 0.15))
-                .cornerRadius(12)
-                
-                // COACH'S NOTES
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("CREW CHIEF NOTES")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.gray)
-                    
-                    Text(manager.todaysMission.coachNotes)
-                        .font(.body)
-                        .foregroundColor(.orange)
-                        .italic()
-                }
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color(white: 0.15))
-                .cornerRadius(12)
-                
-                Spacer()
             }
             .padding(.horizontal)
         }
-        .navigationTitle("Whiteboard")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            generateBriefing()
+            hasAnimated = true
+        }
+    }
+    
+    // MARK: - Mechanical Execution
+    
+    private func generateBriefing() {
+        // 1. Fetch what the spreadsheet *wants* you to do
+        let scheduled = MissionEngine.fetchScheduledMission()
+        
+        // 2. Pass it through the Race Engineer with your live Readiness Score
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            self.todaysMission = MissionEngine.prescribeMission(scheduled: scheduled, readiness: currentReadiness)
+        }
+        
+        // Tactile clunk when the briefing loads
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
     }
 }
+
+

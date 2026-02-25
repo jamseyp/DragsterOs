@@ -34,18 +34,20 @@
 		4233D3312F4DEBC000B948FA /* ReadinessMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3302F4DEBC000B948FA /* ReadinessMetricCard.swift */; };
 		4233D3332F4DF29400B948FA /* TelemetrySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3322F4DF29400B948FA /* TelemetrySnapshot.swift */; };
 		4233D3352F4DF2B300B948FA /* PerformanceEvolutionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3342F4DF2B300B948FA /* PerformanceEvolutionCard.swift */; };
+		42342F122F4F022F005F1CD3 /* ChassisSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42342F112F4F0223005F1CD3 /* ChassisSnapshot.swift */; };
+		42342F142F4F02F2005F1CD3 /* SystemAlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
-		42B884D72F4C941A00A50290 /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D62F4C941A00A50290 /* Persistence.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
 		42B884DE2F4C942100A50290 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42B884DD2F4C942100A50290 /* Assets.xcassets */; };
 		42B884E22F4C942100A50290 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 42B884E12F4C942100A50290 /* Preview Assets.xcassets */; };
 		42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884E82F4C946300A50290 /* ReadinessEngine.swift */; };
-		42B884EC2F4C99E400A50290 /* LogEntry+CoreDataClass.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884EA2F4C99E400A50290 /* LogEntry+CoreDataClass.swift */; };
-		42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */; };
 		42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884EE2F4CE28300A50290 /* HealthKitManager.swift */; };
 		42FAD5292F4EF5A30049BFEF /* DailyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FAD5282F4EF5960049BFEF /* DailyMetric.swift */; };
 		42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 42FAD52A2F4EF80A0049BFEF /* .gitignore */; };
+		42FAD52D2F4EF9450049BFEF /* TelemetryLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FAD52C2F4EF9340049BFEF /* TelemetryLog.swift */; };
+		42FAD52F2F4EFAEF0049BFEF /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FAD52E2F4EFAE80049BFEF /* DashboardView.swift */; };
+		42FAD5312F4EFD760049BFEF /* RunningShoe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -76,20 +78,22 @@
 		4233D3302F4DEBC000B948FA /* ReadinessMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessMetricCard.swift; sourceTree = "<group>"; };
 		4233D3322F4DF29400B948FA /* TelemetrySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetrySnapshot.swift; sourceTree = "<group>"; };
 		4233D3342F4DF2B300B948FA /* PerformanceEvolutionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceEvolutionCard.swift; sourceTree = "<group>"; };
+		42342F112F4F0223005F1CD3 /* ChassisSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisSnapshot.swift; sourceTree = "<group>"; };
+		42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAlertManager.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
-		42B884D62F4C941A00A50290 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
 		42B884DB2F4C941A00A50290 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		42B884DD2F4C942100A50290 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		42B884DF2F4C942100A50290 /* DragsterOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DragsterOS.entitlements; sourceTree = "<group>"; };
 		42B884E12F4C942100A50290 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		42B884E82F4C946300A50290 /* ReadinessEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessEngine.swift; sourceTree = "<group>"; };
-		42B884EA2F4C99E400A50290 /* LogEntry+CoreDataClass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry+CoreDataClass.swift"; sourceTree = "<group>"; };
-		42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		42B884EE2F4CE28300A50290 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		42FAD5282F4EF5960049BFEF /* DailyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyMetric.swift; sourceTree = "<group>"; };
 		42FAD52A2F4EF80A0049BFEF /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
+		42FAD52C2F4EF9340049BFEF /* TelemetryLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryLog.swift; sourceTree = "<group>"; };
+		42FAD52E2F4EFAE80049BFEF /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningShoe.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -130,6 +134,9 @@
 		4233D31D2F4DD8EC00B948FA /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				42342F112F4F0223005F1CD3 /* ChassisSnapshot.swift */,
+				42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */,
+				42FAD52C2F4EF9340049BFEF /* TelemetryLog.swift */,
 				42FAD5282F4EF5960049BFEF /* DailyMetric.swift */,
 				4233D3282F4DDB9400B948FA /* HMTask.swift */,
 				4233D3322F4DF29400B948FA /* TelemetrySnapshot.swift */,
@@ -141,8 +148,6 @@
 			isa = PBXGroup;
 			children = (
 				42FAD52A2F4EF80A0049BFEF /* .gitignore */,
-				42B884EA2F4C99E400A50290 /* LogEntry+CoreDataClass.swift */,
-				42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */,
 				42B884D32F4C941A00A50290 /* DragsterOS */,
 				42B884D22F4C941A00A50290 /* Products */,
 			);
@@ -159,12 +164,13 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */,
+				42FAD52E2F4EFAE80049BFEF /* DashboardView.swift */,
 				4233D31D2F4DD8EC00B948FA /* Models */,
 				4233D3192F4DC9B400B948FA /* Theme */,
 				4233D3102F4DC81100B948FA /* Components */,
 				42B884D42F4C941A00A50290 /* DragsterOSApp.swift */,
 				42B884EE2F4CE28300A50290 /* HealthKitManager.swift */,
-				42B884D62F4C941A00A50290 /* Persistence.swift */,
 				42B884DB2F4C941A00A50290 /* ContentView.swift */,
 				42B884E82F4C946300A50290 /* ReadinessEngine.swift */,
 				4233D30C2F4DC0B900B948FA /* ReadinessGauge.swift */,
@@ -226,7 +232,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1420;
-				LastUpgradeCheck = 1420;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					42B884D02F4C941A00A50290 = {
 						CreatedOnToolsVersion = 14.2;
@@ -271,7 +277,6 @@
 			files = (
 				42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */,
 				4233D2FB2F4DB08600B948FA /* TelemetryDashboardView.swift in Sources */,
-				42B884EC2F4C99E400A50290 /* LogEntry+CoreDataClass.swift in Sources */,
 				4233D3032F4DB93300B948FA /* TireWearManager.swift in Sources */,
 				4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */,
 				4233D3332F4DF29400B948FA /* TelemetrySnapshot.swift in Sources */,
@@ -279,6 +284,7 @@
 				4233D32D2F4DDC5700B948FA /* PerformanceEngine.swift in Sources */,
 				4233D2F92F4DAFF900B948FA /* TelemetryManager.swift in Sources */,
 				4233D32F2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift in Sources */,
+				42342F142F4F02F2005F1CD3 /* SystemAlertManager.swift in Sources */,
 				42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */,
 				4233D3292F4DDB9400B948FA /* HMTask.swift in Sources */,
 				4233D3072F4DBAA000B948FA /* ChassisView.swift in Sources */,
@@ -287,7 +293,9 @@
 				4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */,
 				4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */,
 				4233D3312F4DEBC000B948FA /* ReadinessMetricCard.swift in Sources */,
+				42FAD52F2F4EFAEF0049BFEF /* DashboardView.swift in Sources */,
 				4233D3142F4DC8D300B948FA /* PerrformanceConstants.swift in Sources */,
+				42FAD52D2F4EF9450049BFEF /* TelemetryLog.swift in Sources */,
 				4233D3182F4DC9A100B948FA /* MetricSlider.swift in Sources */,
 				4233D3012F4DB68400B948FA /* MissionView.swift in Sources */,
 				4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */,
@@ -296,13 +304,13 @@
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,
 				4233D3352F4DF2B300B948FA /* PerformanceEvolutionCard.swift in Sources */,
-				42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */,
 				4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */,
 				4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */,
 				4233D3162F4DC98F00B948FA /* DashboardMenuButton.swift in Sources */,
 				4233D31B2F4DC9D600B948FA /* ColorTheme.swift in Sources */,
+				42FAD5312F4EFD760049BFEF /* RunningShoe.swift in Sources */,
+				42342F122F4F022F005F1CD3 /* ChassisSnapshot.swift in Sources */,
 				4233D2F72F4DAF8400B948FA /* TelemetryData.swift in Sources */,
-				42B884D72F4C941A00A50290 /* Persistence.swift in Sources */,
 				4233D3252F4DDAB200B948FA /* TrainingProtocols.swift in Sources */,
 				42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */,
 			);
@@ -315,6 +323,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -344,9 +353,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -373,6 +384,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -402,9 +414,11 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -429,7 +443,9 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"DragsterOS/Preview Content\"";
+				DEVELOPMENT_TEAM = BBE2254DK2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dragster OS needs to read your Engine Telemetry (Heart Rate) for calibration";
@@ -468,7 +484,9 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"DragsterOS/Preview Content\"";
+				DEVELOPMENT_TEAM = BBE2254DK2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dragster OS needs to read your Engine Telemetry (Heart Rate) for calibration";

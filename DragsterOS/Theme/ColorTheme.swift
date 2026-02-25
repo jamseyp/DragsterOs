@@ -16,9 +16,19 @@ struct ColorTheme {
     static let optimal = Color.cyan
     static let stable = Color.green
     static let caution = Color.orange
-    static let warning = Color.yellow
-    static let critical = Color.red
     static let secondaryData = Color.purple
+    
+    // Structural Colors
+        static let surface = Color.white.opacity(0.05) // The glassmorphic card background
+        static let surfaceBorder = Color.white.opacity(0.1)
+        static let textMuted = Color.gray
+        
+        // Kinetic Neon Accents
+        static let prime = Color.cyan       // Optimal / Speed
+        static let warning = Color.yellow   // Threshold / Mid-life degradation
+        static let critical = Color.red     // System Fault / High Fatigue
+        static let recovery = Color.green   // Zone 1 / Low Fuel Tier
+        static let strategy = Color.purple  // Race Day / Engine Tuning
     
     static let primaryBackground = Color.black
         static let cardBackground = Color(white: 0.07)

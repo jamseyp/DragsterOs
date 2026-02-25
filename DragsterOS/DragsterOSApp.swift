@@ -6,15 +6,22 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct DragsterOSApp: App {
-    let persistenceController = PersistenceController.shared
 
     var body: some Scene {
             WindowGroup {
                 ContentView()
-                    .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                    // ✨ THE FIX: We must declare all of our custom models here
+                    .modelContainer(for: [
+                        TelemetryLog.self,
+                        RunningShoe.self,
+                        ChassisSnapshot.self
+                    ])
+                    // Force pure dark mode across the entire application
+                    .preferredColorScheme(.dark)
             }
         }
 }
