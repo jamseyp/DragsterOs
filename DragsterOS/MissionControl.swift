@@ -1,7 +1,7 @@
+import Foundation
 import SwiftUI
 
-// 📐 ARCHITECTURE: The tactical data structures.
-// We make FuelTier Codable so it can eventually be stored directly in SwiftData.
+// 1️⃣ THE DATA MODELS
 
 enum FuelTier: String, Codable {
     case low = "🟢 LOW FUEL TIER (2200 kcal)"
@@ -28,52 +28,50 @@ enum FuelTier: String, Codable {
     }
 }
 
-struct TacticalMission {
+struct TacticalMission: Identifiable {
+    let id = UUID()
+    var dateString: String
     var title: String
     var powerTarget: String
     var fuel: FuelTier
     var coachNotes: String
-    var isAltered: Bool // Flags if the Engine overrode the spreadsheet
+    var isAltered: Bool
 }
 
-// 🧠 THE ALGORITHM: The Race Engineer
+// 2️⃣ THE PREDICTIVE ENGINE
+
 struct MissionEngine {
     
-    /// Dynamically prescribes the daily mission based on physiological readiness.
     static func prescribeMission(scheduled: TacticalMission, readiness: Double) -> TacticalMission {
-        
-        // ✨ THE POLISH: If the engine detects critical central nervous system fatigue,
-        // it actively overrides high-intensity spreadsheet workouts to protect the athlete.
-        
-        if readiness < 40.0 && scheduled.title.contains("Intervals") || scheduled.title.contains("Tempo") {
-            // 🚨 SYSTEM FAULT DETECTED
+        if readiness < 40.0 && (scheduled.title.contains("Intervals") || scheduled.title.contains("Tempo")) {
             return TacticalMission(
+                dateString: scheduled.dateString,
                 title: "SYSTEM RECOVERY PROTOCOL",
                 powerTarget: "ZONE 1 FLUSH (< 150W)",
                 fuel: .low,
                 coachNotes: "⚠️ CRITICAL FATIGUE DETECTED. Readiness is \(Int(readiness))/100. Spreadsheet overridden. Flush the legs, hydrate, and survive today. Do not push.",
                 isAltered: true
             )
-        } else if readiness > 85.0 && scheduled.title.contains("Intervals") {
-            // 🚀 PRIME DETECTED
-            var upgradedMission = scheduled
-            upgradedMission.coachNotes = "🟢 OPTIMAL READINESS (\(Int(readiness))/100). The engine is primed. You have clearance to push the wattage ceiling on the final 2 intervals today."
-            return upgradedMission
         }
-        
-        // If readiness is standard, proceed with the spreadsheet plan.
         return scheduled
     }
     
-    // TEMPORARY MOCK DATA: In Phase 3, we will load your entire CSV directly into SwiftData.
-    // For now, we pull today's scheduled workout from your current block.
     static func fetchScheduledMission() -> TacticalMission {
+        // ✨ THE POLISH: Currently testing "Mar 10" to verify the parser
+        if let futureMission = CSVParserEngine.testSpecificDateMission(dateString: "Mar 10") {
+            return futureMission
+        }
+        
         return TacticalMission(
-            title: "Taper Intervals (3 x 800m @ Race Pace)",
-            powerTarget: "312W - 336W",
+            dateString: "Today",
+            title: "AWAITING NEW TRAINING BLOCK",
+            powerTarget: "MAINTENANCE",
             fuel: .medium,
-            coachNotes: "Practice 5:48/km pace. Sharp but not hard. Keep cadence 170+.",
+            coachNotes: "No mission located in the current CSV for today's date. Upload the next phase of the training block.",
             isAltered: false
         )
     }
 }
+
+// 3️⃣ THE CSV INGESTION PIPELINE
+

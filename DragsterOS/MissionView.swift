@@ -125,6 +125,22 @@ struct MissionView: View {
                                     .foregroundStyle(.white)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
+                            // ... inside MissionView.swift, at the bottom of the ScrollView VStack ...
+
+                                NavigationLink(destination: MacroCycleView()) {
+                                    HStack {
+                                        Text("VIEW ENTIRE MACRO-CYCLE")
+                                            .font(.system(size: 12, weight: .black, design: .monospaced))
+                                        Spacer()
+                                        Image(systemName: "calendar.day.timeline.left")
+                                    }
+                                    .foregroundStyle(.black)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(ColorTheme.prime)
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .padding(.top, 10)
                         }
                     }
                 } else {
