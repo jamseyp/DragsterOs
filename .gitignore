@@ -1,0 +1,44 @@
+# --- Xcode ---
+# Build artifacts
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# --- User-specific files ---
+# These are the #1 cause of conflict errors
+xcuserdata/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+
+# --- Swift Package Manager ---
+.build/
+.swiftpm/
+Package.resolved
+
+# --- SwiftData & Core Data ---
+# Ignore local development databases so your 95kg
+# entries don't conflict with other branches.
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# --- OS Specific ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+Network Trash Folder
+Temporary Items
+.Spotlight-V100
+.Trashes
+
+# --- Backup/Misc ---
+*.swp
+*.lock
+*.err
+*.orig

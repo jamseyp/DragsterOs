@@ -45,6 +45,7 @@
 		42B884ED2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */; };
 		42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884EE2F4CE28300A50290 /* HealthKitManager.swift */; };
 		42FAD5292F4EF5A30049BFEF /* DailyMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42FAD5282F4EF5960049BFEF /* DailyMetric.swift */; };
+		42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 42FAD52A2F4EF80A0049BFEF /* .gitignore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -88,6 +89,7 @@
 		42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LogEntry+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		42B884EE2F4CE28300A50290 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		42FAD5282F4EF5960049BFEF /* DailyMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyMetric.swift; sourceTree = "<group>"; };
+		42FAD52A2F4EF80A0049BFEF /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +140,7 @@
 		42B884C82F4C941A00A50290 = {
 			isa = PBXGroup;
 			children = (
+				42FAD52A2F4EF80A0049BFEF /* .gitignore */,
 				42B884EA2F4C99E400A50290 /* LogEntry+CoreDataClass.swift */,
 				42B884EB2F4C99E400A50290 /* LogEntry+CoreDataProperties.swift */,
 				42B884D32F4C941A00A50290 /* DragsterOS */,
@@ -254,6 +257,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				42B884E22F4C942100A50290 /* Preview Assets.xcassets in Resources */,
+				42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */,
 				42B884DE2F4C942100A50290 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
