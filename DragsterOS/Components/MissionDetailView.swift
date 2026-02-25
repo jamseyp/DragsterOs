@@ -23,14 +23,14 @@ struct MissionDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(mission.title)
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(ColorTheme.textPrimary) // 🎨 THEME FIX
                             
                             HStack {
                                 Image(systemName: "bolt.fill")
                                 Text("TARGET: \(mission.powerTarget)")
                                     .font(.system(size: 16, weight: .bold, design: .monospaced))
                             }
-                            .foregroundStyle(.yellow)
+                            .foregroundStyle(.orange) // 🎨 THEME FIX: Match Mechanical Power charts
                         }
                     }
                     
@@ -47,7 +47,7 @@ struct MissionDetailView: View {
                             
                             Text(mission.fuel.macros)
                                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(ColorTheme.textMuted) // 🎨 THEME FIX
                         }
                     }
                     
@@ -60,7 +60,7 @@ struct MissionDetailView: View {
                         Text(mission.coachNotes)
                             .font(.system(size: 16, weight: .medium, design: .default))
                             .italic()
-                            .foregroundStyle(.white)
+                            .foregroundStyle(ColorTheme.textPrimary) // 🎨 THEME FIX
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }

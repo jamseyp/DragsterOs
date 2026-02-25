@@ -22,6 +22,12 @@ final class TelemetryLog {
     var avgCadence: Double?    // SPM
     var intervalPace: String?  // e.g., "4:50/km"
     
+   //  HRV data.
+    var rmssd: Double?
+    var frequencyHF: Double?
+    var frequencyLF: Double?
+    var eliteReadiness: Int? // Elite HRV's 1-10 or 1-100 score
+    
     // --- 🥩 NUTRITIONAL PROTOCOL ---
     var proteinGrams: Double
     

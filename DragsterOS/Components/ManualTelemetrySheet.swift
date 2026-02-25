@@ -16,6 +16,11 @@ struct ManualTelemetrySheet: View {
     @State private var manualSleep: Double = 0
     @State private var manualWeight: Double = 0
     
+    @State private var rmssd: Double = 0
+    @State private var eliteScore: Int = 0
+    @State private var hf: Double = 0
+    @State private var lf: Double = 0
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -57,6 +62,29 @@ struct ManualTelemetrySheet: View {
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
                                 .foregroundStyle(ColorTheme.prime)
+                        }
+                        // ... inside the Form ...
+                        Section(header: Text("ELITE HRV PROTOCOL").font(.caption.monospaced())) {
+                            HStack {
+                                Text("RMSSD (ms)").foregroundStyle(ColorTheme.prime)
+                                Spacer()
+                                TextField("0", value: $rmssd, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                            }
+                            HStack {
+                                Text("Readiness (1-10)").foregroundStyle(ColorTheme.prime)
+                                Spacer()
+                                TextField("0", value: $eliteScore, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                            }
+                            HStack {
+                                Text("HF (High Freq)")
+                                Spacer()
+                                TextField("0", value: $hf, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                            }
+                            HStack {
+                                Text("LF (Low Freq)")
+                                Spacer()
+                                TextField("0", value: $lf, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                            }
                         }
                     }
                     .listRowBackground(ColorTheme.panel)

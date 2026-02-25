@@ -41,6 +41,8 @@
 		425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */; };
 		425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */; };
 		425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */; };
+		425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C588B2F4F850B00EFBA4A /* PlannedMission.swift */; };
+		425C58902F4F90D500EFBA4A /* AddPlannedActivitySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -89,6 +91,8 @@
 		425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualTelemetrySheet.swift; sourceTree = "<group>"; };
 		425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessTrendChart.swift; sourceTree = "<group>"; };
 		425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryChartCard.swift; sourceTree = "<group>"; };
+		425C588B2F4F850B00EFBA4A /* PlannedMission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannedMission.swift; sourceTree = "<group>"; };
+		425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPlannedActivitySheet.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -147,6 +151,7 @@
 		4233D31D2F4DD8EC00B948FA /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				425C588B2F4F850B00EFBA4A /* PlannedMission.swift */,
 				425C58792F4F351E00EFBA4A /* KineticSession.swift */,
 				42342F112F4F0223005F1CD3 /* ChassisSnapshot.swift */,
 				42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */,
@@ -176,6 +181,7 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */,
 				425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */,
 				425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */,
 				42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */,
@@ -317,10 +323,12 @@
 				425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */,
 				425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */,
 				425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */,
+				425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */,
 				425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */,
 				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,
+				425C58902F4F90D500EFBA4A /* AddPlannedActivitySheet.swift in Sources */,
 				4233D3052F4DB96500B948FA /* TireWearView.swift in Sources */,
 				4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */,
 				4233D3162F4DC98F00B948FA /* DashboardMenuButton.swift in Sources */,

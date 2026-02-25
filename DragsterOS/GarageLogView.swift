@@ -227,6 +227,34 @@ struct SessionDetailCanvas: View {
     @State private var cadenceArray: [(Date, Double)] = []
     @State private var isLoadingVectors = true
     
+    // MARK: - 🧠 AEROBIC DECOUPLING ENGINE
+    private var aerobicDecoupling: Double? {
+        // We need a decent sample size to calculate meaningful drift
+        guard hrArray.count > 20, powerArray.count > 20 else { return nil }
+        
+        // Sort chronologically to be safe
+        let sortedHR = hrArray.sorted { $0.0 < $1.0 }
+        let sortedPower = powerArray.sorted { $0.0 < $1.0 }
+        
+        let midHR = sortedHR.count / 2
+        let midPower = sortedPower.count / 2
+        
+        let hrFirstHalf = sortedHR[0..<midHR].map { $0.1 }.reduce(0, +) / Double(midHR)
+        let hrSecondHalf = sortedHR[midHR...].map { $0.1 }.reduce(0, +) / Double(sortedHR.count - midHR)
+        
+        let pwrFirstHalf = sortedPower[0..<midPower].map { $0.1 }.reduce(0, +) / Double(midPower)
+        let pwrSecondHalf = sortedPower[midPower...].map { $0.1 }.reduce(0, +) / Double(sortedPower.count - midPower)
+        
+        // Prevent division by zero
+        guard hrFirstHalf > 0, hrSecondHalf > 0 else { return nil }
+        
+        let efFirstHalf = pwrFirstHalf / hrFirstHalf
+        let efSecondHalf = pwrSecondHalf / hrSecondHalf
+        
+        // A positive percentage means HR drifted UP relative to power (loss of efficiency)
+        return ((efFirstHalf - efSecondHalf) / efFirstHalf) * 100.0
+    }
+    
     private var morningReadiness: Int? {
         let log = logs.first { Calendar.current.isDate($0.date, inSameDayAs: session.date) }
         return log != nil ? Int(log!.readinessScore) : nil
@@ -243,7 +271,44 @@ struct SessionDetailCanvas: View {
             return (String(format: "%d:%02d", mins, secs), "/KM")
         }
     }
-
+    
+    // MARK: 🧠 HR ZONE ENGINE
+    // Assumes Max HR of ~190.
+    // todo: You can make this dynamic later!
+    private var hrZones: [(zone: String, time: Double, color: Color)] {
+        guard !hrArray.isEmpty else { return [] }
+        
+        var z1 = 0.0, z2 = 0.0, z3 = 0.0, z4 = 0.0, z5 = 0.0
+        
+        // Sort chronologically just in case
+        let sorted = hrArray.sorted { $0.0 < $1.0 }
+        
+        for i in 0..<(sorted.count - 1) {
+            let bpm = sorted[i].1
+            let duration = sorted[i+1].0.timeIntervalSince(sorted[i].0)
+            
+            // Limit gap duration (in case watch lost connection)
+            let validDuration = min(duration, 10.0)
+            
+            switch bpm {
+            case ..<133: z1 += validDuration     // Z1: Recovery (<70%)
+            case 133..<152: z2 += validDuration  // Z2: Aerobic (70-80%)
+            case 152..<171: z3 += validDuration  // Z3: Tempo (80-90%)
+            case 171..<185: z4 += validDuration  // Z4: Threshold (90-97%)
+            default: z5 += validDuration         // Z5: VO2 Max (>97%)
+            }
+        }
+        
+        return [
+            ("Z1", z1 / 60.0, .gray),
+            ("Z2", z2 / 60.0, .cyan),
+            ("Z3", z3 / 60.0, .green),
+            ("Z4", z4 / 60.0, .orange),
+            ("Z5", z5 / 60.0, ColorTheme.critical)
+        ].filter { $0.1 > 0 } // Only show zones that were actually used
+    }
+    
+    
     var body: some View {
         ZStack {
             ColorTheme.background.ignoresSafeArea()
@@ -265,7 +330,7 @@ struct SessionDetailCanvas: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .padding(.horizontal)
-
+                    
                     // 2. HERO METRICS
                     VStack(spacing: 8) {
                         Image(systemName: session.disciplineIcon)
@@ -276,7 +341,7 @@ struct SessionDetailCanvas: View {
                             .foregroundStyle(ColorTheme.textPrimary)
                     }
                     .padding(.top, 20)
-
+                    
                     // 3. SCALAR GRID: KINETICS (Restored Values!)
                     HStack(spacing: 12) {
                         TelemetryBlock(title: "AVG POWER", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
@@ -284,7 +349,7 @@ struct SessionDetailCanvas: View {
                         TelemetryBlock(title: "PACE/SPD", value: performanceMetric.value, unit: performanceMetric.unit)
                     }
                     .padding(.horizontal)
-
+                    
                     // 4. SCALAR GRID: BIOMETRICS
                     HStack(spacing: 12) {
                         TelemetryBlock(title: "READINESS", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
@@ -292,7 +357,7 @@ struct SessionDetailCanvas: View {
                         TelemetryBlock(title: "EFFORT", value: "\(session.rpe)", unit: "/10")
                     }
                     .padding(.horizontal)
-
+                    
                     // ✨ 5. VECTOR CHARTS (JIT Rendered)
                     VStack(spacing: 16) {
                         if isLoadingVectors {
@@ -307,6 +372,77 @@ struct SessionDetailCanvas: View {
                             if !cadenceArray.isEmpty {
                                 TelemetryChartCard(title: "CADENCE SPARKLINE", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "SPM")
                             }
+                            
+                            // ✨ AEROBIC DECOUPLING METRIC
+                            if let decoupling = aerobicDecoupling {
+                                let isEfficient = decoupling <= 5.0 // < 5% drift is considered highly fit
+                                
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text("AEROBIC DECOUPLING (Pa:Hr)")
+                                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                                        .foregroundStyle(ColorTheme.textMuted)
+                                    
+                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                        Text(String(format: "%.1f", decoupling))
+                                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                                            .foregroundStyle(isEfficient ? .green : ColorTheme.critical)
+                                        
+                                        Text("%")
+                                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                                            .foregroundStyle(isEfficient ? .green : ColorTheme.critical)
+                                        
+                                        Spacer()
+                                        
+                                        Image(systemName: isEfficient ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                                            .font(.system(size: 24))
+                                            .foregroundStyle(isEfficient ? .green : ColorTheme.critical)
+                                    }
+                                    
+                                    Text(isEfficient
+                                         ? "Optimal aerobic efficiency maintained. Cardiovascular drift was kept under the 5% threshold."
+                                         : "Cardiovascular drift detected. Your base endurance is currently lacking for this specific duration/intensity.")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundStyle(ColorTheme.textMuted)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    // ✨ NEW: Contextual Guardrail
+                                                                Text("⚠️ METRIC ONLY VALID FOR STEADY-STATE / ZONE 2 EFFORTS. IGNORE FOR INTERVALS.")
+                                                                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                                                                    .foregroundStyle(ColorTheme.warning)
+                                                                    .padding(.top, 4)
+                                }
+                                .padding(20)
+                                .background(ColorTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                            
+                            // ✨ NEW: TIME IN ZONES
+                            if !hrZones.isEmpty {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("TIME IN ZONES").font(.system(size: 10, weight: .black, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
+                                    
+                                    HStack(spacing: 4) {
+                                        ForEach(hrZones, id: \.zone) { zone in
+                                            VStack(spacing: 4) {
+                                                Text("\(Int(zone.time))m")
+                                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                                    .foregroundStyle(ColorTheme.textPrimary)
+                                                
+                                                Rectangle()
+                                                    .fill(zone.color)
+                                                    .frame(height: 6)
+                                                    .clipShape(Capsule())
+                                                
+                                                Text(zone.zone)
+                                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                    .foregroundStyle(ColorTheme.textMuted)
+                                            }
+                                        }
+                                    }
+                                }
+                                .padding(16)
+                                .background(ColorTheme.surface)
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -317,7 +453,7 @@ struct SessionDetailCanvas: View {
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                     }
-
+                    
                     // 7. ATHLETE NOTES
                     if !session.coachNotes.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
@@ -486,5 +622,16 @@ struct AddSessionSheet: View {
         context.insert(newSession)
         try? context.save()
         UINotificationFeedbackGenerator().notificationOccurred(.success); dismiss()
+        
+        Task {
+            // Write to Apple Health
+            try? await healthManager.saveWorkoutToAppleHealth(
+                discipline: selectedDiscipline,
+                durationMinutes: duration,
+                distanceKM: distance,
+                averageHR: averageHR,
+                notes: notes
+            )
+        }
     }
 }

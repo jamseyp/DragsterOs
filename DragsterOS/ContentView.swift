@@ -97,6 +97,12 @@ struct ContentView: View {
                                 NavigationLink(destination: GarageLogView()) {
                                     DashboardMenuButton(title: "KINETIC LOGBOOK", icon: "bolt.fill", color: ColorTheme.warning)
                                 }
+                                
+                                // ✨ ADD THIS NEW ROUTE:
+                                NavigationLink(destination: MacroCycleView()) {
+                                    DashboardMenuButton(title: "MACRO-CYCLE STRATEGY", icon: "calendar.grid.3x3.fill", color: .purple)
+                                }
+                                
                                 NavigationLink(destination: ChassisView()) {
                                     DashboardMenuButton(title: "MASS & EFFICIENCY", icon: "scalemass.fill", color: ColorTheme.recovery)
                                 }
@@ -135,6 +141,21 @@ struct ContentView: View {
             do {
                 await alertManager.requestAuthorization()
                 try await healthManager.requestAuthorization()
+                let planDescriptor = FetchDescriptor<PlannedMission>()
+                            let existingMissions = (try? context.fetch(planDescriptor)) ?? []
+                            
+                            if existingMissions.isEmpty {
+                                print("⚠️ No Macro-Cycle found. Ingesting hmPlan.csv...")
+                                let parsedMissions = CSVParserEngine.generateMacroCycle()
+                                
+                                await MainActor.run {
+                                    for mission in parsedMissions {
+                                        context.insert(mission)
+                                    }
+                                    try? context.save()
+                                    print("✅ MACRO-CYCLE SECURED: \(parsedMissions.count) missions loaded into SwiftData.")
+                                }
+                            }
                 
                 // ✨ 1. HISTORICAL BACKFILL ENGINE ✨
                 // If database lacks enough data for a trendline, scrape the last 30 days.

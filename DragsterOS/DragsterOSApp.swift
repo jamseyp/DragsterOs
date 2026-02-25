@@ -19,7 +19,8 @@ struct DragsterOSApp: App {
                         TelemetryLog.self,
                         RunningShoe.self,
                         ChassisSnapshot.self,
-                        KineticSession.self
+                        KineticSession.self,
+                        PlannedMission.self
                     ])
                     // Force pure dark mode across the entire application
                    // .preferredColorScheme(.dark)

@@ -227,3 +227,169 @@ extension HealthKitManager {
             }
         }
 }
+// MARK: - 🕰️ HISTORICAL TELEMETRY ENGINE (30-DAY BACKFILL)
+extension HealthKitManager {
+    
+    /// Scrapes HealthKit for daily biometric averages over a specified number of days in the past.
+    func fetchHistoricalBiometrics(daysBack: Int = 30) async -> [(date: Date, hrv: Double, restingHR: Double, sleepHours: Double)] {
+        var historicalData: [(Date, Double, Double, Double)] = []
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: .now)
+        
+        // Loop backward sequentially to respect HealthKit thread limits
+        for dayOffset in 1...daysBack {
+            guard let targetDate = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
+            
+            let startOfDay = targetDate
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            let sleepStart = calendar.date(byAdding: .hour, value: -12, to: startOfDay)! // Look back to previous evening
+            
+            // Concurrently fetch the 3 core pillars of readiness for that specific date
+            async let hrv = fetchQuantity(type: .heartRateVariabilitySDNN, start: startOfDay, end: endOfDay, unit: HKUnit.secondUnit(with: .milli))
+            async let rhr = fetchQuantity(type: .restingHeartRate, start: startOfDay, end: endOfDay, unit: HKUnit.count().unitDivided(by: HKUnit.minute()))
+            async let sleep = fetchSleepDuration(start: sleepStart, end: endOfDay)
+            
+            let metrics = await (hrv, rhr, sleep)
+            
+            // Only append if we have actual data (prevents zeroing out days you didn't wear a watch)
+            if metrics.0 > 0 || metrics.2 > 0 {
+                historicalData.append((
+                    date: targetDate,
+                    hrv: metrics.0,
+                    restingHR: metrics.1,
+                    sleepHours: metrics.2
+                ))
+            }
+        }
+        
+        return historicalData
+    }
+    
+    // MARK: - ⚙️ PRIVATE GENERIC FETCHERS
+    
+    private func fetchQuantity(type identifier: HKQuantityTypeIdentifier, start: Date, end: Date, unit: HKUnit) async -> Double {
+        guard let quantityType = HKQuantityType.quantityType(forIdentifier: identifier) else { return 0.0 }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.quantitySample(type: quantityType, predicate: predicate)],
+            sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
+            limit: 1
+        )
+        guard let results = try? await descriptor.result(for: healthStore), let sample = results.first else { return 0.0 }
+        return sample.quantity.doubleValue(for: unit)
+    }
+    
+    private func fetchSleepDuration(start: Date, end: Date) async -> Double {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return 0.0 }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end)
+        let descriptor = HKSampleQueryDescriptor(
+            predicates: [.categorySample(type: sleepType, predicate: predicate)],
+            sortDescriptors: []
+        )
+        guard let results = try? await descriptor.result(for: healthStore) else { return 0.0 }
+        
+        let asleepSamples = results.filter {
+            $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepREM.rawValue ||
+            $0.value == HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue
+        }
+        
+        let totalSleepSeconds = asleepSamples.reduce(0.0) { total, sample in
+            total + sample.endDate.timeIntervalSince(sample.startDate)
+        }
+        return totalSleepSeconds / 3600.0
+    }
+}
+// MARK: - 📤 TWO-WAY SYNC (WRITE TO APPLE HEALTH)
+extension HealthKitManager {
+    
+    /// Pushes a manually logged Mission directly into the Apple Fitness/Health ecosystem
+    // MARK: - 📤 TWO-WAY SYNC (WRITE TO APPLE HEALTH)
+        
+        /// Pushes a manually logged Mission directly into the Apple Fitness/Health ecosystem
+        func saveWorkoutToAppleHealth(discipline: String, durationMinutes: Double, distanceKM: Double, averageHR: Double, notes: String) async throws {
+            
+            let activityType: HKWorkoutActivityType
+            switch discipline {
+            case "RUN": activityType = .running
+            case "SPIN": activityType = .cycling
+            case "ROW": activityType = .rowing
+            case "STRENGTH": activityType = .traditionalStrengthTraining
+            default: activityType = .other
+            }
+            
+            let start = Calendar.current.date(byAdding: .minute, value: -Int(durationMinutes), to: .now)!
+            let end = Date()
+            
+            let workoutConfiguration = HKWorkoutConfiguration()
+            workoutConfiguration.activityType = activityType
+            
+            let builder = HKWorkoutBuilder(healthStore: healthStore, configuration: workoutConfiguration, device: .local())
+            
+            // 1. Begin Collection (Bridged to Async)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                builder.beginCollection(withStart: start) { success, error in
+                    if let error = error { continuation.resume(throwing: error) }
+                    else { continuation.resume(returning: ()) }
+                }
+            }
+            
+            // 2. Add Distance
+            if distanceKM > 0 {
+                let distanceType = discipline == "SPIN" ? HKQuantityType.quantityType(forIdentifier: .distanceCycling)! : HKQuantityType.quantityType(forIdentifier: .distanceWalkingRunning)!
+                let distanceQuantity = HKQuantity(unit: .meter(), doubleValue: distanceKM * 1000.0)
+                let distanceSample = HKCumulativeQuantitySample(type: distanceType, quantity: distanceQuantity, start: start, end: end)
+                
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    builder.add([distanceSample]) { success, error in
+                        if let error = error { continuation.resume(throwing: error) }
+                        else { continuation.resume(returning: ()) }
+                    }
+                }
+            }
+            
+            // 3. Add Average HR
+            if averageHR > 0 {
+                let hrType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
+                let hrQuantity = HKQuantity(unit: HKUnit.count().unitDivided(by: .minute()), doubleValue: averageHR)
+                let hrSample = HKQuantitySample(type: hrType, quantity: hrQuantity, start: start, end: end)
+                
+                try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                    builder.add([hrSample]) { success, error in
+                        if let error = error { continuation.resume(throwing: error) }
+                        else { continuation.resume(returning: ()) }
+                    }
+                }
+            }
+            
+            // 4. Inject Metadata (Bridged to Async)
+            var metadata: [String: Any] = [HKMetadataKeyTimeZone: TimeZone.current.identifier]
+            if !notes.isEmpty {
+                metadata["DragsterOS_Debrief"] = notes
+            }
+            
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                builder.addMetadata(metadata) { success, error in
+                    if let error = error { continuation.resume(throwing: error) }
+                    else { continuation.resume(returning: ()) }
+                }
+            }
+            
+            // 5. End Collection (Bridged to Async)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                builder.endCollection(withEnd: end) { success, error in
+                    if let error = error { continuation.resume(throwing: error) }
+                    else { continuation.resume(returning: ()) }
+                }
+            }
+            
+            // 6. Finish Workout (Bridged to Async)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                builder.finishWorkout { workout, error in
+                    if let error = error { continuation.resume(throwing: error) }
+                    else { continuation.resume(returning: ()) }
+                }
+            }
+        }
+}

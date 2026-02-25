@@ -1,188 +1,175 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 🗺️ MISSION ENGINE ROOT
-/// The strategic "Pit Wall" of the app. Analyzes readiness and outputs the daily physical protocol.
 struct MissionView: View {
     
     // MARK: - 🗄️ PERSISTENCE
+    @Environment(\.modelContext) private var context
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
-    @Query(sort: \KineticSession.date, order: .reverse) private var sessions: [KineticSession]
     
-    // MARK: - 🕹️ STATE
     @State private var todaysMission: TacticalMission?
+    @State private var isCalculating = true
     
-    // MARK: - 🧠 CALCULATED BIOMETRICS
+    // 🧠 Dynamically calculates current readiness to feed the override engine
     private var currentReadiness: Double {
-        logs.first?.readinessScore ?? 100.0
+        let today = Calendar.current.startOfDay(for: .now)
+        if let log = logs.first(where: { Calendar.current.startOfDay(for: $0.date) == today }) {
+            return Double(log.readinessScore)
+        }
+        return 100.0 // Defaults to fresh if no log exists for today yet
     }
     
     // MARK: - 🖼️ UI BODY
     var body: some View {
         ZStack {
-            // Theme-aware background
             ColorTheme.background.ignoresSafeArea()
             
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    
-                    // --- MARK: 📋 HEADER ---
-                    HStack(alignment: .bottom) {
+            if isCalculating {
+                // ✨ TACTICAL LOADING STATE
+                VStack(spacing: 16) {
+                    ProgressView().tint(ColorTheme.prime)
+                        .scaleEffect(1.2)
+                    Text("DECRYPTING DAILY PROTOCOL...")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(ColorTheme.prime)
+                }
+            } else if let mission = todaysMission {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 24) {
+                        
+                        // 1. HEADER
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("DAILY PROTOCOL")
+                            Text(mission.dateString.uppercased())
                                 .font(.system(size: 12, weight: .bold, design: .monospaced))
                                 .foregroundStyle(ColorTheme.textMuted)
-                            
                             Text("TACTICAL BRIEFING")
                                 .font(.system(size: 28, weight: .heavy, design: .rounded))
                                 .foregroundStyle(ColorTheme.textPrimary)
                         }
+                        .padding(.top, 20)
                         
-                        Spacer()
-                        
-                        // Readiness Context Indicator
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("READINESS")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundStyle(ColorTheme.textMuted)
-                            
-                            Text("\(Int(currentReadiness))")
-                                .font(.system(size: 24, weight: .black, design: .monospaced))
-                                .foregroundStyle(currentReadiness < 40 ? ColorTheme.critical : ColorTheme.prime)
-                        }
-                    }
-                    .padding(.top, 20)
-                    .padding(.horizontal)
-                    
-                    // --- MARK: 🚀 MISSION DIRECTIVE ---
-                    if let mission = todaysMission {
-                        VStack(spacing: 16) {
-                            
-                            // ⚠️ SYSTEM OVERRIDE BANNER
-                            // Appears automatically if readiness dictates a downgrade
-                            if mission.isAltered {
-                                SystemOverrideBanner()
+                        // 2. 🚨 SYSTEM OVERRIDE WARNING
+                        if mission.isAltered {
+                            HStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 24))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("SYSTEM OVERRIDE ACTIVE")
+                                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                                    Text("Protocol downgraded due to critical CNS fatigue.")
+                                        .font(.system(size: 10, weight: .medium, design: .default))
+                                }
                             }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(ColorTheme.critical.opacity(0.15))
+                            .foregroundStyle(ColorTheme.critical)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(ColorTheme.critical, lineWidth: 1))
+                        }
+                        
+                        // 3. CORE OBJECTIVE BLOCK
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("PRIMARY DIRECTIVE")
+                                .font(.system(size: 10, weight: .black, design: .monospaced))
+                                .foregroundStyle(ColorTheme.prime)
                             
-                            // 🎯 PRIMARY OBJECTIVE
-                            MissionCard(
-                                title: "PRIMARY OBJECTIVE",
-                                icon: "target",
-                                color: mission.isAltered ? ColorTheme.critical : ColorTheme.prime
-                            ) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(mission.title)
-                                        .font(.system(size: 20, weight: .black, design: .rounded))
+                            Text(mission.title)
+                                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                                .foregroundStyle(ColorTheme.textPrimary)
+                                .lineLimit(3)
+                                .minimumScaleFactor(0.8)
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "bolt.fill")
+                                    .foregroundStyle(.orange)
+                                Text(mission.powerTarget)
+                                    .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(ColorTheme.textPrimary)
+                            }
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ColorTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
+                        
+                        // 4. FUELING PROTOCOL
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("NUTRITION PROTOCOL")
+                                .font(.system(size: 10, weight: .black, design: .monospaced))
+                                .foregroundStyle(mission.fuel.color)
+                            
+                            HStack(spacing: 12) {
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundStyle(mission.fuel.color)
+                                
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(mission.fuel.rawValue)
+                                        .font(.system(size: 14, weight: .black, design: .monospaced))
                                         .foregroundStyle(ColorTheme.textPrimary)
                                     
-                                    HStack {
-                                        Image(systemName: "bolt.fill")
-                                        Text("TARGET: \(mission.powerTarget)")
-                                            .font(.system(size: 16, weight: .bold, design: .monospaced))
-                                    }
-                                    .foregroundStyle(mission.isAltered ? ColorTheme.critical : ColorTheme.warning)
-                                }
-                            }
-                            
-                            // ⛽ FUEL INJECTION
-                            MissionCard(
-                                title: "FUEL INJECTION",
-                                icon: "flame.fill",
-                                color: mission.fuel.color
-                            ) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(mission.fuel.rawValue.uppercased())
-                                        .font(.system(size: 18, weight: .heavy, design: .rounded))
-                                        .foregroundStyle(mission.fuel.color)
-                                    
                                     Text(mission.fuel.macros)
-                                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                                        .foregroundStyle(ColorTheme.textPrimary.opacity(0.8))
+                                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                        .foregroundStyle(ColorTheme.textMuted)
                                 }
                             }
-                            
-                            // 🎧 PIT WALL TRANSMISSION
-                            MissionCard(
-                                title: "PIT WALL TRANSMISSION",
-                                icon: "waveform",
-                                color: ColorTheme.strategy
-                            ) {
-                                Text(mission.coachNotes)
-                                    .font(.system(size: 16, weight: .regular, design: .default))
-                                    .italic()
-                                    .foregroundStyle(ColorTheme.textPrimary)
-                                    // ✨ UI POLISH: A vertical leading line to simulate a comms transmission
-                                    .padding(.leading, 12)
-                                    .overlay(
-                                        Rectangle()
-                                            .fill(ColorTheme.strategy)
-                                            .frame(width: 3),
-                                        alignment: .leading
-                                    )
-                            }
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, 40)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(ColorTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                         
-                    } else {
-                        // ⏳ LOADING STATE
-                        VStack(spacing: 16) {
-                            Spacer().frame(height: 60)
-                            ProgressView()
-                                .tint(ColorTheme.prime)
-                                .scaleEffect(1.5)
-                            Text("CALCULATING OPTIMAL PATH...")
-                                .font(.system(size: 10, weight: .black, design: .monospaced))
-                                .foregroundStyle(ColorTheme.textMuted)
-                            Spacer()
+                        // 5. COMMANDER'S INTENT (Notes)
+                        if !mission.coachNotes.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("COMMANDER'S INTENT")
+                                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                                    .foregroundStyle(ColorTheme.textMuted)
+                                
+                                Text(mission.coachNotes)
+                                    .font(.system(size: 14, weight: .medium, design: .default))
+                                    .foregroundStyle(ColorTheme.textPrimary)
+                                    .lineSpacing(4)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            // Tactical left-border styling
+                            .overlay(
+                                Rectangle()
+                                    .fill(ColorTheme.surfaceBorder)
+                                    .frame(width: 3),
+                                alignment: .leading
+                            )
                         }
-                        .frame(maxWidth: .infinity)
+                        
                     }
+                    .padding(.horizontal)
+                    .padding(.bottom, 40)
                 }
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            generateDailyMission()
+        .task {
+            await generateDailyMission()
         }
     }
     
     // MARK: - 🧠 LOGIC: MISSION GENERATION
-        private func generateDailyMission() {
-            // Modern Swift Concurrency: Replaces DispatchQueue
-            Task {
-                // Simulated AI/Engine delay (500 million nanoseconds = 0.5 seconds)
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                
-                // Push the UI update back to the Main Thread safely
-                await MainActor.run {
-                    // Initialize using the exact order of the TacticalMission struct
-                    self.todaysMission = TacticalMission(
-                        dateString: Date().formatted(date: .abbreviated, time: .omitted), // ✨ Added the missing dateString
-                        title: "ZONE 2 AEROBIC BASE",
-                        powerTarget: "185W - 210W",
-                        fuel: .low,
-                        coachNotes: "Keep the cadence high (175+ SPM) and the heart rate strictly below 145 BPM. Let the structural system recover while we build capillary density.",
-                        isAltered: currentReadiness < 40 // Moved to the end to match your struct order
-                    )
-                }
-            }
+    private func generateDailyMission() async {
+        // Simulated UI decryption delay (0.6 seconds)
+        try? await Task.sleep(nanoseconds: 600_000_000)
+        
+        // 1. Fetch raw CSV data from SwiftData
+        let rawMission = MissionEngine.fetchTodayMission(context: context)
+        
+        // 2. Algorithm checks for fatigue penalties based on this morning's telemetry
+        let finalMission = MissionEngine.prescribeMission(scheduled: rawMission, readiness: currentReadiness)
+        
+        // 3. Render UI
+        await MainActor.run {
+            self.todaysMission = finalMission
+            self.isCalculating = false
         }
-}
-
-// MARK: - 🖼️ COMPONENT: SYSTEM OVERRIDE BANNER
-struct SystemOverrideBanner: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill")
-            Text("SYSTEM OVERRIDE: LOW READINESS")
-                .font(.system(size: 12, weight: .heavy, design: .monospaced))
-        }
-        // Contrast flip: Black text on Light Mode, White text on Dark Mode against the Red background
-        .foregroundStyle(ColorTheme.background)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(ColorTheme.critical)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }

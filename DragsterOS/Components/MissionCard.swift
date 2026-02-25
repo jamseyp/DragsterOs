@@ -21,7 +21,7 @@ struct MissionCard<Content: View>: View {
                 Text(title)
             }
             .font(.system(size: 12, weight: .black, design: .monospaced))
-            .foregroundStyle(color)
+            .foregroundStyle(ColorTheme.textPrimary)
             
             content
         }

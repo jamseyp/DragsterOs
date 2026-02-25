@@ -1,9 +1,9 @@
 # 🏎️ DRAGSTER OS: TACTICAL ROADMAP
 
 ## 🏁 EPIC 1: THE MISSION ENGINE (Algorithmic Coaching)
-- [ ] **1. CSV Ingestion Engine:** Build a parser that reads `hmPlan.csv` and converts it into a SwiftData `TrainingBlock` model.
-- [ ] **2. Adaptive Target Scaling:** If Morning Readiness is < 40, automatically mutate today’s Mission Target (e.g., downgrade a Threshold run to Zone 2) and flag it with a "System Override" UI banner.
-- [ ] **3. Aerobic Decoupling Detection:** Compare average Power vs. average HR across similar runs to calculate your running economy/efficiency factor. Have Gemini analyze if decoupling occurred.
+- [x] **1. CSV Ingestion Engine:** Build a parser that reads `hmPlan.csv` and converts it into a SwiftData `TrainingBlock` model.
+- [x] **2. Adaptive Target Scaling:** If Morning Readiness is < 40, automatically mutate today’s Mission Target (e.g., downgrade a Threshold run to Zone 2) and flag it with a "System Override" UI banner.
+- [x] **3. Aerobic Decoupling Detection:** Compare average Power vs. average HR across similar runs to calculate your running economy/efficiency factor. Have Gemini analyze if decoupling occurred.
 - [ ] **4. Fuel Injection Calculator:** Estimate required kJ (kilojoules) for the upcoming Mission based on planned duration/power, and output an exact pre-workout macro target (e.g., "60g Carbs Required").
 
 ## 🫀 EPIC 2: DEEP BIOMETRICS & CHASSIS FATIGUE

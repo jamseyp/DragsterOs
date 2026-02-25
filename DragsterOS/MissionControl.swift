@@ -1,7 +1,8 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
-// 1️⃣ THE DATA MODELS
+// MARK: - 1️⃣ THE DATA MODELS
 
 enum FuelTier: String, Codable {
     case low = "🟢 LOW FUEL TIER (2200 kcal)"
@@ -22,7 +23,7 @@ enum FuelTier: String, Codable {
         switch self {
         case .low: return .green
         case .medium: return .yellow
-        case .high: return .red
+        case .high: return ColorTheme.critical
         case .race: return .purple
         }
     }
@@ -38,40 +39,91 @@ struct TacticalMission: Identifiable {
     var isAltered: Bool
 }
 
-// 2️⃣ THE PREDICTIVE ENGINE
+// MARK: - 2️⃣ THE PREDICTIVE ENGINE
 
 struct MissionEngine {
     
+    /// Modifies the mission dynamically if the user is fatigued
     static func prescribeMission(scheduled: TacticalMission, readiness: Double) -> TacticalMission {
-        if readiness < 40.0 && (scheduled.title.contains("Intervals") || scheduled.title.contains("Tempo")) {
-            return TacticalMission(
-                dateString: scheduled.dateString,
-                title: "SYSTEM RECOVERY PROTOCOL",
-                powerTarget: "ZONE 1 FLUSH (< 150W)",
-                fuel: .low,
-                coachNotes: "⚠️ CRITICAL FATIGUE DETECTED. Readiness is \(Int(readiness))/100. Spreadsheet overridden. Flush the legs, hydrate, and survive today. Do not push.",
-                isAltered: true
-            )
-        }
-        return scheduled
-    }
-    
-    static func fetchScheduledMission() -> TacticalMission {
-        // ✨ THE POLISH: Currently testing "Mar 10" to verify the parser
-        if let futureMission = CSVParserEngine.testSpecificDateMission(dateString: "Mar 10") {
-            return futureMission
+        var adjusted = scheduled
+        
+        // 🚨 CRITICAL DEBT: Readiness < 40
+        if readiness < 40.0 && (scheduled.title.contains("INTERVAL") || scheduled.title.contains("TEMPO") || scheduled.title.contains("LONG")) {
+            adjusted.title = "SYSTEM RECOVERY: \(scheduled.title)"
+            adjusted.powerTarget = "ZONE 1 FLUSH (< 140W)"
+            adjusted.fuel = .low
+            adjusted.isAltered = true
+            adjusted.coachNotes = "⚠️ CRITICAL FATIGUE DETECTED (Readiness: \(Int(readiness))). Overriding planned intensity. Focus on blood flow, do not exceed Zone 1."
+            return adjusted
         }
         
+        // 🟡 SUB-OPTIMAL: Readiness 40 - 65
+        if readiness >= 40.0 && readiness < 65.0 && (scheduled.title.contains("INTERVAL") || scheduled.title.contains("TEMPO")) {
+            adjusted.isAltered = true
+            
+            // Safe String Parsing: Look for numbers specifically attached to 'W'
+            let components = scheduled.powerTarget.components(separatedBy: .whitespaces)
+            var scaledTarget = ""
+            
+            for word in components {
+                let cleanWord = word.replacingOccurrences(of: "W", with: "")
+                if let watts = Double(cleanWord), word.contains("W") {
+                    let scaledWatts = Int(watts * 0.90) // Reduce by 10%
+                    scaledTarget += "\(scaledWatts)W "
+                } else {
+                    scaledTarget += "\(word) "
+                }
+            }
+            
+            adjusted.powerTarget = scaledTarget.trimmingCharacters(in: .whitespaces)
+            adjusted.coachNotes = "🟡 MODERATE DEBT (Readiness: \(Int(readiness))). System has automatically scaled your power targets down by 10% to protect the structural system.\n\n" + scheduled.coachNotes
+            return adjusted
+        }
+        
+        return adjusted
+    }
+    
+    /// Pulls today's mission directly from the SwiftData cache
+    static func fetchTodayMission(context: ModelContext) -> TacticalMission {
+        let today = Calendar.current.startOfDay(for: .now)
+        let descriptor = FetchDescriptor<PlannedMission>()
+        let allMissions = (try? context.fetch(descriptor)) ?? []
+        
+        // Search the SwiftData array for a mission matching today's date
+        if let planned = allMissions.first(where: { Calendar.current.startOfDay(for: $0.date) == today }) {
+            
+            // Map the text fuel string to our UI enum
+            let mappedFuel: FuelTier
+            if planned.fuelTier.contains("LOW") { mappedFuel = .low }
+            else if planned.fuelTier.contains("MED") { mappedFuel = .medium }
+            else if planned.fuelTier.contains("HIGH") { mappedFuel = .high }
+            else if planned.fuelTier.contains("RACE") { mappedFuel = .race }
+            else { mappedFuel = .medium }
+            
+            // Append structural lifting notes if they exist
+            var finalNotes = planned.coachNotes
+            if planned.strength.lowercased() != "rest" && !planned.strength.isEmpty {
+                finalNotes = "STRUCTURAL LOAD: \(planned.strength). " + finalNotes
+            }
+            
+            return TacticalMission(
+                dateString: planned.dateString,
+                title: planned.activity.uppercased(),
+                powerTarget: planned.powerTarget.uppercased(),
+                fuel: mappedFuel,
+                coachNotes: finalNotes,
+                isAltered: false
+            )
+        }
+        
+        // Fallback if today is a rest day or not in the CSV
         return TacticalMission(
-            dateString: "Today",
-            title: "AWAITING NEW TRAINING BLOCK",
+            dateString: Date().formatted(date: .abbreviated, time: .omitted),
+            title: "REST / FREELANCE",
             powerTarget: "MAINTENANCE",
             fuel: .medium,
-            coachNotes: "No mission located in the current CSV for today's date. Upload the next phase of the training block.",
+            coachNotes: "No mission located in the database for today's date. Enjoy the rest day or log a freelance session.",
             isAltered: false
         )
     }
 }
-
-// 3️⃣ THE CSV INGESTION PIPELINE
-
