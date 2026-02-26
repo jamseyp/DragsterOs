@@ -13,35 +13,52 @@ final class HealthKitManager {
     private init() {}
     
     // MARK: - 🔐 AUTHORIZATION PROTOCOL
-    func requestAuthorization() async throws {
-        guard HKHealthStore.isHealthDataAvailable() else { return }
-        
-        let typesToRead: Set<HKObjectType> = [
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN)!,
-            HKObjectType.quantityType(forIdentifier: .restingHeartRate)!,
-            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.workoutType(),
-            // ✨ THE MISSING PERMISSIONS: You MUST request these to get the data!
-            HKObjectType.quantityType(forIdentifier: .heartRate)!,
-            HKObjectType.quantityType(forIdentifier: .runningPower)!,
-            HKObjectType.quantityType(forIdentifier: .cyclingPower)!,
-            HKObjectType.quantityType(forIdentifier: .cyclingCadence)!,
-            HKObjectType.quantityType(forIdentifier: .stepCount)!
-        ]
-        
-        let typesToWrite: Set<HKSampleType> = [
-            HKObjectType.workoutType(),
-            HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)!,
-            HKObjectType.quantityType(forIdentifier: .distanceCycling)!
-        ]
-        
-        try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
-        
-        await MainActor.run {
-            self.isAuthorized = true
+ 
+    
+    
+    // MARK: - 🔐 AUTHORIZATION PROTOCOL
+        func requestAuthorization() async throws {
+            guard HKHealthStore.isHealthDataAvailable() else {
+                throw NSError(domain: "HealthKitManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device."])
+            }
+            
+            // 📥 DATA WE NEED TO READ (Ingestion)
+            let readTypes: Set<HKObjectType> = [
+                // Workouts & Kinematics
+                HKObjectType.workoutType(),
+                HKQuantityType(.heartRate),
+                HKQuantityType(.distanceWalkingRunning),
+                HKQuantityType(.distanceCycling),
+                
+                // ✨ NEW: BIOLOGICAL TELEMETRY
+                HKQuantityType(.heartRateVariabilitySDNN), // Apple's native HRV format
+                HKQuantityType(.restingHeartRate),         // RHR
+                HKCategoryType(.sleepAnalysis),            // Sleep
+                HKQuantityType(.bodyMass),                 // Weight/Mass
+                
+                // ✨ NEW: MECHANICAL TELEMETRY
+                HKQuantityType(.cyclingPower),             // Bike Wattage
+                HKQuantityType(.runningPower),             // Run Wattage (if using Stryd/Apple Watch)
+                HKQuantityType(.cyclingCadence)   ,         // Spin Cadence
+                // Add this to your readTypes matrix
+                HKQuantityType(.stepCount), // Running cadence
+                
+                
+                // ✨ NEW: THERMODYNAMIC LOGISTICS
+                            HKQuantityType(.activeEnergyBurned),       // Movement / Workout Caloric Burn
+                            HKQuantityType(.basalEnergyBurned),        // Resting Metabolic Rate (BMR)
+                            HKQuantityType(.dietaryEnergyConsumed)     // Caloric Intake (Food Logged)
+            ]
+            
+            // 📤 DATA WE NEED TO WRITE (If logging manual directives)
+            let writeTypes: Set<HKSampleType> = [
+                HKObjectType.workoutType(),
+                HKQuantityType(.distanceWalkingRunning),
+                HKQuantityType(.distanceCycling)
+            ]
+            
+            try await healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
         }
-    }
     
     // MARK: - 🧬 TELEMETRY EXTRACTION (Async Pipeline)
     func fetchMorningReadiness() async throws -> (hrv: Double, restingHR: Double, sleepHours: Double) {
@@ -300,6 +317,9 @@ extension HealthKitManager {
         }
         return totalSleepSeconds / 3600.0
     }
+    
+    
+    
 }
 // MARK: - 📤 TWO-WAY SYNC (WRITE TO APPLE HEALTH)
 extension HealthKitManager {
@@ -393,3 +413,4 @@ extension HealthKitManager {
             }
         }
 }
+

@@ -10,12 +10,16 @@ struct ManualTelemetrySheet: View {
     var log: TelemetryLog?
     var history: [TelemetryLog]
     
-    // Local state for editing to prevent binding issues with Optionals
+    // ✨ Fetch sessions to calculate mechanical load for the engine
+    @Query(sort: \KineticSession.date, order: .forward) private var sessions: [KineticSession]
+    
+    // Local state
     @State private var manualHRV: Double = 0
     @State private var manualRHR: Double = 0
     @State private var manualSleep: Double = 0
     @State private var manualWeight: Double = 0
     
+    // Elite Protocol
     @State private var rmssd: Double = 0
     @State private var eliteScore: Int = 0
     @State private var hf: Double = 0
@@ -63,31 +67,22 @@ struct ManualTelemetrySheet: View {
                                 .multilineTextAlignment(.trailing)
                                 .foregroundStyle(ColorTheme.prime)
                         }
-                        // ... inside the Form ...
-                        Section(header: Text("ELITE HRV PROTOCOL").font(.caption.monospaced())) {
-                            HStack {
-                                Text("RMSSD (ms)").foregroundStyle(ColorTheme.prime)
-                                Spacer()
-                                TextField("0", value: $rmssd, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
-                            HStack {
-                                Text("Readiness (1-10)").foregroundStyle(ColorTheme.prime)
-                                Spacer()
-                                TextField("0", value: $eliteScore, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
-                            }
-                            HStack {
-                                Text("HF (High Freq)")
-                                Spacer()
-                                TextField("0", value: $hf, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
-                            HStack {
-                                Text("LF (Low Freq)")
-                                Spacer()
-                                TextField("0", value: $lf, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
-                            }
+                    }
+                    .listRowBackground(ColorTheme.surface)
+                    
+                    Section(header: Text("ELITE HRV PROTOCOL").font(.caption.monospaced())) {
+                        HStack {
+                            Text("RMSSD (ms)").foregroundStyle(ColorTheme.prime)
+                            Spacer()
+                            TextField("0", value: $rmssd, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing)
+                        }
+                        HStack {
+                            Text("Readiness (1-10)").foregroundStyle(ColorTheme.prime)
+                            Spacer()
+                            TextField("0", value: $eliteScore, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
                         }
                     }
-                    .listRowBackground(ColorTheme.panel)
+                    .listRowBackground(ColorTheme.surface)
                 }
                 .scrollContentBackground(.hidden)
             }
@@ -115,16 +110,22 @@ struct ManualTelemetrySheet: View {
     }
     
     private func saveManualData() {
+        // ✨ CALCULATE CURRENT LOAD PROFILE FOR THE ENGINE
+        let currentLoad = LoadEngine.computeCurrentLoad(history: sessions)
+        
         if let current = log {
             current.hrv = manualHRV
             current.restingHR = manualRHR
             current.sleepDuration = manualSleep
             current.weightKG = manualWeight
             
+            // ✨ FIXED: Added missing arguments (todayRHR and loadProfile)
             current.readinessScore = ReadinessEngine.computeReadiness(
                 todayHRV: manualHRV,
+                todayRHR: manualRHR,
                 todaySleep: manualSleep,
-                history: history
+                history: history,
+                loadProfile: currentLoad
             )
         } else {
             let newLog = TelemetryLog(
@@ -133,7 +134,13 @@ struct ManualTelemetrySheet: View {
                 restingHR: manualRHR,
                 sleepDuration: manualSleep,
                 weightKG: manualWeight,
-                readinessScore: ReadinessEngine.computeReadiness(todayHRV: manualHRV, todaySleep: manualSleep, history: history)
+                readinessScore: ReadinessEngine.computeReadiness(
+                    todayHRV: manualHRV,
+                    todayRHR: manualRHR,
+                    todaySleep: manualSleep,
+                    history: history,
+                    loadProfile: currentLoad
+                )
             )
             context.insert(newLog)
         }

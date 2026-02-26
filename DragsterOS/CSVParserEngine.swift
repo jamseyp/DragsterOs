@@ -51,8 +51,8 @@ struct CSVParserEngine {
                         activity: activity,
                         powerTarget: intensity,
                         strength: strength,
-                        fuelTier: fuelTier,
-                        coachNotes: notes
+                        energyProtocol: fuelTier,
+                        commandersIntent: notes
                     )
                     macroCycle.append(mission)
                 } else {

@@ -71,7 +71,29 @@ final class KineticSession {
         self.avgPower = avgPower
         self.shoeName = shoeName
     }
+    
+    // MARK: - 🧠 MECHANICAL LOAD CALCULATOR (TSS)
+        @Transient // We compute this on the fly; no need to save it to the database
+        var trainingStressScore: Double {
+            // Assume a baseline Functional Threshold Power (FTP) of 250W for now
+            // You can make this a global user setting later
+            let assumedFTP = 250.0
+            
+            if let power = avgPower, discipline == "SPIN" {
+                // Mechanical Power Method
+                let durationSecs = durationMinutes * 60.0
+                let intensityFactor = power / assumedFTP
+                return (durationSecs * power * intensityFactor) / (assumedFTP * 3600.0) * 100.0
+            } else {
+                // Biological sRPE Fallback Method
+                // Squaring the RPE ensures exponential load (a 9/10 effort is vastly harder than a 4/10)
+                let rpeFactor = pow(Double(rpe) / 10.0, 2)
+                return rpeFactor * durationMinutes * (100.0 / 60.0)
+            }
+        }
 }
+
+
 
 // MARK: - 🤖 AI COACH TRANSLATION
 /// Extension to handle the high-density data export for LLM analysis.

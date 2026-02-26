@@ -1,14 +1,12 @@
 import SwiftUI
 import SwiftData
 
-// 🎨 ARCHITECTURE: A fluid, scrollable timeline of the entire training block.
-// Uses LazyVStack to ensure memory stays perfectly flat even if the database contains 100+ rows.
-
 struct MacroCycleView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // ✨ THE UPGRADE: Pull the schedule directly from the SwiftData cache, sorted by date!
-    @Query(sort: \PlannedMission.date, order: .forward) private var macroCycle: [PlannedMission]
+    // ✨ Using your new tactical nomenclature
+    @Query(sort: \OperationalDirective.date, order: .forward) private var macroCycle: [OperationalDirective]
+    
     @State private var showingAddMission = false
     
     // Calculate today's date string to dynamically highlight the current row
@@ -19,56 +17,44 @@ struct MacroCycleView: View {
     }
     
     var body: some View {
-        ZStack {
-            ColorTheme.background.ignoresSafeArea()
-            
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
-                    
-                    // HEADER
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("STRATEGIC VISIBILITY")
-                            .font(.system(size: 12, weight: .bold, design: .monospaced))
-                            .foregroundStyle(ColorTheme.textMuted) // 🎨 THEME FIX
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 24) {
+                
+                // THE TIMELINE
+                LazyVStack(spacing: 16) {
+                    ForEach(macroCycle) { plannedMission in
+                        let tactical = mapToTactical(plannedMission)
                         
-                        Text("MACRO-CYCLE")
-                            .font(.system(size: 28, weight: .heavy, design: .rounded))
-                            .foregroundStyle(ColorTheme.textPrimary) // 🎨 THEME FIX
-                    }
-                    .padding(.top, 20)
-                    .padding(.horizontal)
-                    
-                    // THE TIMELINE
-                    LazyVStack(spacing: 16) {
-                        ForEach(macroCycle) { plannedMission in
-                            // Map the SwiftData model back to the UI struct for the Detail View
-                            let tactical = mapToTactical(plannedMission)
-                            
-                            // ✨ THE POLISH: We wrap the row in a routing link
-                            NavigationLink(destination: MissionDetailView(mission: tactical)) {
-                                MacroCycleRow(mission: plannedMission, isToday: plannedMission.dateString == todayString)
-                            }
-                            // This button style strips away the default blue iOS highlight,
-                            // keeping our custom OLED-black and grey styling perfectly intact.
-                            .buttonStyle(PlainButtonStyle())
+                        NavigationLink(destination: MissionDetailView(mission: tactical)) {
+                            MacroCycleRow(mission: plannedMission, isToday: plannedMission.dateString == todayString)
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.horizontal)
                 }
-                .padding(.bottom, 40)
+                .padding(.horizontal)
             }
+            .padding(.top, 20)
+            .padding(.bottom, 100) // Space for the floating button
         }
-        .navigationBarTitleDisplayMode(.inline)
-        // ✨ NEW: The Add Button & Sheet
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button(action: {
-                    showingAddMission = true
-                }) {
-                    Image(systemName: "plus.app.fill")
-                        .font(.system(size: 20))
-                        .foregroundStyle(ColorTheme.prime)
-                }
+        // ✨ THE OS WRAPPER
+        .applyTacticalOS(title: "MACRO-CYCLE STRATEGY")
+        
+        // ✨ FLOATING TACTICAL OVERLAY (ADD DIRECTIVE)
+        .overlay(alignment: .bottomTrailing) {
+            TacticalActionButton(icon: "plus", color: ColorTheme.prime) {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                showingAddMission = true
+            }
+            .padding(24)
+        }
+        
+        // ✨ CUSTOM BACK BUTTON (Since the system nav bar is hidden)
+        .overlay(alignment: .topLeading) {
+            Button(action: { dismiss() }) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(ColorTheme.prime)
+                    .padding()
             }
         }
         .sheet(isPresented: $showingAddMission) {
@@ -77,8 +63,7 @@ struct MacroCycleView: View {
     }
     
     // MARK: - 🧠 HELPER: DATA MAPPING
-    // Maps the database row into the UI struct expected by your MissionDetailView
-    private func mapToTactical(_ planned: PlannedMission) -> TacticalMission {
+    private func mapToTactical(_ planned: OperationalDirective) -> TacticalMission {
         let mappedFuel: FuelTier
         if planned.fuelTier.contains("LOW") { mappedFuel = .low }
         else if planned.fuelTier.contains("MED") { mappedFuel = .medium }
@@ -97,18 +82,17 @@ struct MacroCycleView: View {
     }
 }
 
-// ✨ THE POLISH: A hyper-compact row designed for maximum data density
+// MARK: - ✨ THE POLISH: ROW COMPONENT
 struct MacroCycleRow: View {
-    let mission: PlannedMission // ✨ Now expects the SwiftData model
+    let mission: OperationalDirective
     let isToday: Bool
     
-    // Dynamically calculate the color from the raw string
     private var fuelColor: Color {
         if mission.fuelTier.contains("LOW") { return .green }
         if mission.fuelTier.contains("MED") { return .yellow }
-        if mission.fuelTier.contains("HIGH") { return ColorTheme.critical } // 🎨 THEME FIX
+        if mission.fuelTier.contains("HIGH") { return ColorTheme.critical }
         if mission.fuelTier.contains("RACE") { return .purple }
-        return ColorTheme.textMuted // 🎨 THEME FIX
+        return ColorTheme.textMuted
     }
     
     var body: some View {
@@ -116,13 +100,13 @@ struct MacroCycleRow: View {
             
             // 1. The Date Block
             VStack {
-                Text(mission.dateString.prefix(3).uppercased()) // "MAR"
+                Text(mission.dateString.prefix(3).uppercased())
                     .font(.system(size: 10, weight: .black, design: .monospaced))
-                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textMuted) // 🎨 THEME FIX
+                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textMuted)
                 
-                Text(mission.dateString.suffix(2)) // "09"
+                Text(mission.dateString.suffix(2))
                     .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textPrimary) // 🎨 THEME FIX
+                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textPrimary)
             }
             .frame(width: 50, height: 50)
             .background(isToday ? ColorTheme.prime : ColorTheme.surface)
@@ -132,7 +116,7 @@ struct MacroCycleRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(mission.activity.uppercased())
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(isToday ? ColorTheme.prime : ColorTheme.textPrimary) // 🎨 THEME FIX
+                    .foregroundStyle(isToday ? ColorTheme.prime : ColorTheme.textPrimary)
                     .lineLimit(1)
                 
                 HStack(spacing: 8) {
@@ -140,10 +124,10 @@ struct MacroCycleRow: View {
                         Image(systemName: "bolt.fill")
                         Text(mission.powerTarget)
                     }
-                    .foregroundStyle(.orange) // 🎨 THEME FIX: Matched to Mechanical Power charts
+                    .foregroundStyle(.orange)
                     
                     Text("•")
-                        .foregroundStyle(ColorTheme.textMuted) // 🎨 THEME FIX
+                        .foregroundStyle(ColorTheme.textMuted)
                     
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
@@ -158,7 +142,6 @@ struct MacroCycleRow: View {
         .padding(12)
         .background(ColorTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        // Subtle border to highlight today's specific objective in the list
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(isToday ? ColorTheme.prime.opacity(0.5) : Color.clear, lineWidth: 1)

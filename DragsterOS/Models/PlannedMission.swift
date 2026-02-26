@@ -26,8 +26,8 @@ final class PlannedMission {
         activity: String,
         powerTarget: String,
         strength: String,
-        fuelTier: String,
-        coachNotes: String,
+        energyProtocol: String,
+        commandersIntent: String,
         isCompleted: Bool = false,
         isAlteredBySystem: Bool = false
     ) {
@@ -38,9 +38,11 @@ final class PlannedMission {
         self.activity = activity
         self.powerTarget = powerTarget
         self.strength = strength
-        self.fuelTier = fuelTier
-        self.coachNotes = coachNotes
+        self.fuelTier = energyProtocol
+        self.coachNotes = commandersIntent
         self.isCompleted = isCompleted
         self.isAlteredBySystem = isAlteredBySystem
     }
 }
+
+typealias OperationalDirective = PlannedMission

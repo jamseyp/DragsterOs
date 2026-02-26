@@ -105,8 +105,8 @@ struct AddPlannedActivitySheet: View {
             activity: title,
             powerTarget: intensity,
             strength: "",
-            fuelTier: fuel,
-            coachNotes: notes.isEmpty ? "User-defined freelance mission." : notes
+            energyProtocol: fuel,
+            commandersIntent: notes.isEmpty ? "User-defined freelance mission." : notes
         )
         
         context.insert(newMission)
