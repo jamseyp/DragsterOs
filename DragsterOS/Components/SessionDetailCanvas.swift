@@ -8,12 +8,14 @@ struct SessionDetailCanvas: View {
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Environment(\.dismiss) private var dismiss
     
-    // ✨ NEW: JIT (Just-In-Time) Data Arrays for Charts
+    // ✨ JIT Data Arrays for Charts
     @State private var healthManager = HealthKitManager.shared
     @State private var hrArray: [(Date, Double)] = []
     @State private var powerArray: [(Date, Double)] = []
     @State private var cadenceArray: [(Date, Double)] = []
     @State private var isLoadingVectors = true
+    @State private var gctSeries: [(Date, Double)] = []
+    @State private var oscillationSeries: [(Date, Double)] = []
     
     // MARK: - 🧠 AEROBIC DECOUPLING ENGINE
     private var aerobicDecoupling: Double? {
@@ -86,14 +88,68 @@ struct SessionDetailCanvas: View {
         ].filter { $0.1 > 0 }
     }
     
+    // MARK: - 📤 HIGH-RESOLUTION JSON GENERATOR
+    private func generateHighResJSONPayload() -> String {
+        // Strip timestamps and convert to raw value arrays to prevent AI context overload
+        let hrVector = hrArray.map { Int($0.1) }
+        let pwrVector = powerArray.map { Int($0.1) }
+        let cadVector = cadenceArray.map { Int($0.1) }
+        let gctVector = gctSeries.map { Int($0.1) }
+        let oscVector = oscillationSeries.map { Double(String(format: "%.1f", $0.1)) ?? 0.0 }
+        
+        let payloadDict: [String: Any] = [
+            "session_metadata": [
+                "discipline": session.discipline,
+                "duration_minutes": session.durationMinutes,
+                "distance_km": session.distanceKM,
+                "rpe": session.rpe,
+                "morning_readiness_score": morningReadiness ?? 0,
+                "chassis_equipment": session.shoeName ?? "NONE"
+            ],
+            "scalar_averages": [
+                "avg_hr": Int(session.averageHR),
+                "avg_power": session.avgPower != nil ? Int(session.avgPower!) : 0,
+                "avg_cadence": session.avgCadence != nil ? Int(session.avgCadence!) : 0,
+                "avg_gct_ms": session.groundContactTime != nil ? Int(session.groundContactTime!) : 0,
+                "avg_osc_cm": session.verticalOscillation ?? 0,
+                "aerobic_decoupling_pct": aerobicDecoupling ?? 0
+            ],
+            "vector_time_series": [
+                "hr_bpm_array": hrVector,
+                "power_w_array": pwrVector,
+                "cadence_spm_array": cadVector,
+                "gct_ms_array": gctVector,
+                "oscillation_cm_array": oscVector
+            ]
+        ]
+        
+        if let data = try? JSONSerialization.data(withJSONObject: payloadDict, options: .prettyPrinted),
+           let jsonString = String(data: data, encoding: .utf8) {
+            return """
+            [SYSTEM: DRAGSTER OS - HIGH-RES SESSION EXPORT]
+            REQUEST: Perform a deep tactical analysis of this session's mechanical and biological vectors.
+            
+            // TELEMETRY JSON //
+            \(jsonString)
+            
+            // DIRECTIVE //
+            1. Analyze the `vector_time_series` arrays for correlation. Does Form (GCT/Oscillation) degrade as HR spikes or toward the end of the arrays?
+            2. Evaluate the `aerobic_decoupling_pct`. If > 5%, address endurance drift.
+            3. Provide a clinical, objective summary of the Commander's mechanical efficiency.
+            """
+        }
+        
+        return "ERROR: COMPRESSION FAULT"
+    }
+    
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 
-                // 1. AI EXPORT PIPELINE
+                // 1. ✨ AI EXPORT PIPELINE (UPDATED FOR JSON)
                 Button(action: {
-                    let excerpt = session.generateFullTacticalExcerpt(readiness: morningReadiness)
-                    UIPasteboard.general.string = excerpt
+                    let exportPayload = generateHighResJSONPayload()
+                    UIPasteboard.general.string = exportPayload
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }) {
                     Label("EXPORT FULL TELEMETRY TO GEMINI", systemImage: "brain.head.profile")
@@ -125,7 +181,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // ✨ 4. SCALAR GRID: ADVANCED BIOMECHANICS
+                // 4. SCALAR GRID: ADVANCED BIOMECHANICS
                 if session.groundContactTime != nil || session.verticalOscillation != nil || session.elevationGain != nil {
                     HStack(spacing: 12) {
                         if let gct = session.groundContactTime {
@@ -149,7 +205,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // ✨ 6. VECTOR CHARTS (JIT Rendered)
+                // 6. VECTOR CHARTS (JIT Rendered)
                 VStack(spacing: 16) {
                     if isLoadingVectors {
                         ProgressView().tint(ColorTheme.prime).padding(.vertical, 40)
@@ -162,6 +218,12 @@ struct SessionDetailCanvas: View {
                         }
                         if !cadenceArray.isEmpty {
                             TelemetryChartCard(title: "CADENCE SPARKLINE", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "SPM")
+                        }
+                        if !gctSeries.isEmpty {
+                            TelemetryChartCard(title: "GCT", icon: "footprint.fill", data: gctSeries, color: .blue, unit:"S")
+                        }
+                        if !oscillationSeries.isEmpty {
+                            TelemetryChartCard(title: "Vertical Oscillation", icon: "arrow.up.and.down.and.sparkles", data: oscillationSeries, color: .yellow, unit: "CM")
                         }
                         
                         // ✨ AEROBIC DECOUPLING METRIC
@@ -196,7 +258,6 @@ struct SessionDetailCanvas: View {
                                     .foregroundStyle(ColorTheme.textMuted)
                                     .fixedSize(horizontal: false, vertical: true)
                                 
-                                // Contextual Guardrail
                                 Text("⚠️ METRIC ONLY VALID FOR STEADY-STATE / ZONE 2 EFFORTS. IGNORE FOR INTERVALS.")
                                     .font(.system(size: 9, weight: .black, design: .monospaced))
                                     .foregroundStyle(ColorTheme.warning)
@@ -207,7 +268,7 @@ struct SessionDetailCanvas: View {
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                         
-                        // ✨ TIME IN ZONES
+                        // TIME IN ZONES
                         if !hrZones.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("TIME IN ZONES").font(.system(size: 10, weight: .black, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
@@ -257,10 +318,7 @@ struct SessionDetailCanvas: View {
             }
             .padding(.bottom, 40)
         }
-        // ✨ OS WRAPPER APPLIED HERE
         .applyTacticalOS(title: "DIRECTIVE ANALYSIS")
-        
-        // ✨ CUSTOM BACK BUTTON (Since navigation bar is hidden)
         .overlay(alignment: .topLeading) {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")
@@ -270,25 +328,23 @@ struct SessionDetailCanvas: View {
             }
         }
         .task {
-            // ✨ THE JIT TRIGGER
             let isRide = session.discipline == "SPIN"
             async let fetchedHR = healthManager.fetchHRSeries(start: session.date, durationMinutes: session.durationMinutes)
             async let fetchedPower = healthManager.fetchPowerSeries(start: session.date, durationMinutes: session.durationMinutes, isRide: isRide)
             async let fetchedCadence = healthManager.fetchCadenceSeries(start: session.date, durationMinutes: session.durationMinutes, isRide: isRide)
+            async let gctData = healthManager.fetchGCTSeries(start: session.date, durationMinutes: session.durationMinutes)
+            async let oscData = healthManager.fetchOscillationSeries(start: session.date, durationMinutes: session.durationMinutes)
             
-            let (hrRes, pwrRes, cadRes) = await (fetchedHR, fetchedPower, fetchedCadence)
+            let (hrRes, pwrRes, cadRes, gct, osc) = await (fetchedHR, fetchedPower, fetchedCadence, gctData, oscData)
             
             await MainActor.run {
                 self.hrArray = hrRes
                 self.powerArray = pwrRes
                 self.cadenceArray = cadRes
+                self.gctSeries = gct
+                self.oscillationSeries = osc
                 self.isLoadingVectors = false
             }
         }
     }
 }
-
-
-
-
-

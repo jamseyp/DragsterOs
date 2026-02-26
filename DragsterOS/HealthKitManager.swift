@@ -430,4 +430,78 @@ extension HealthKitManager {
                 }
             }
         }
+    
+    /// Fetches the energy balance for a specific date (Intake - Total Burn).
+        func fetchEnergyBalance(for date: Date = .now) async -> (intake: Double, burned: Double, net: Double) {
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+            
+            // Helper to sum a quantity type
+            func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
+                guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
+                return await withCheckedContinuation { continuation in
+                    let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+                        let sum = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0.0
+                        continuation.resume(returning: sum)
+                    }
+                    healthStore.execute(query)
+                }
+            }
+            
+            async let active = fetchSum(for: .activeEnergyBurned)
+            async let basal = fetchSum(for: .basalEnergyBurned)
+            async let dietary = fetchSum(for: .dietaryEnergyConsumed)
+            
+            let (a, b, d) = await (active, basal, dietary)
+            let totalBurned = a + b
+            
+            return (intake: d, burned: totalBurned, net: d - totalBurned)
+        }
+
+        /// Fetches the final net caloric balance for T-1 (Yesterday).
+        func fetchYesterdayEnergyBalance() async -> Double {
+            let calendar = Calendar.current
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else { return 0.0 }
+            let data = await fetchEnergyBalance(for: yesterday)
+            return data.net
+        }
+
+        /// Fetches historical energy balance for trend analysis.
+        func fetchHistoricalEnergyBalance(daysBack: Int) async -> [(date: Date, net: Double)] {
+            var historical: [(Date, Double)] = []
+            let calendar = Calendar.current
+            
+            for i in 1...daysBack {
+                guard let date = calendar.date(byAdding: .day, value: -i, to: Date()) else { continue }
+                let data = await fetchEnergyBalance(for: date)
+                historical.append((date: date, net: data.net))
+            }
+        
+            return historical.sorted(by: { (a, b) -> Bool in
+                return a.0 < b.0 // .0 refers to the Date in the tuple (Date, Double, Double, Double)
+            })
+        }
+    
+    /// Fetches a high-resolution series of Ground Contact Time (GCT) samples in milliseconds.
+        func fetchGCTSeries(start: Date, durationMinutes: Double) async -> [(Date, Double)] {
+            return await fetchTimeSeriesData(
+                identifier: .runningGroundContactTime,
+                unit: HKUnit.secondUnit(with: .milli),
+                start: start,
+                durationMinutes: durationMinutes
+            )
+        }
+        
+        /// Fetches a high-resolution series of Vertical Oscillation samples in centimeters.
+        func fetchOscillationSeries(start: Date, durationMinutes: Double) async -> [(Date, Double)] {
+            return await fetchTimeSeriesData(
+                identifier: .runningVerticalOscillation,
+                unit: HKUnit.meterUnit(with: .centi),
+                start: start,
+                durationMinutes: durationMinutes
+            )
+        }
 }

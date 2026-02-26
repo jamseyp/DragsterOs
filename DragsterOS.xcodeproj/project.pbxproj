@@ -49,6 +49,7 @@
 		426CBFC52F50816F00559E41 /* SessionDetailCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */; };
 		426CBFC92F50818200559E41 /* AddSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC82F50818200559E41 /* AddSessionSheet.swift */; };
 		426CBFCF2F5081B400559E41 /* SessionSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */; };
+		426CBFD12F508CC000559E41 /* BiomechanicsEfficiencyChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFD02F508CC000559E41 /* BiomechanicsEfficiencyChart.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -116,6 +117,7 @@
 		426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailCanvas.swift; sourceTree = "<group>"; };
 		426CBFC82F50818200559E41 /* AddSessionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionSheet.swift; sourceTree = "<group>"; };
 		426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryCard.swift; sourceTree = "<group>"; };
+		426CBFD02F508CC000559E41 /* BiomechanicsEfficiencyChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomechanicsEfficiencyChart.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -155,6 +157,7 @@
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				426CBFD02F508CC000559E41 /* BiomechanicsEfficiencyChart.swift */,
 				426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */,
 				426CBFC82F50818200559E41 /* AddSessionSheet.swift */,
 				426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */,
@@ -401,6 +404,7 @@
 				42FAD5312F4EFD760049BFEF /* RunningShoe.swift in Sources */,
 				42342F122F4F022F005F1CD3 /* ChassisSnapshot.swift in Sources */,
 				42D708512F50372B00DC1091 /* OSHeader.swift in Sources */,
+				426CBFD12F508CC000559E41 /* BiomechanicsEfficiencyChart.swift in Sources */,
 				4233D3252F4DDAB200B948FA /* TrainingProtocols.swift in Sources */,
 				42B884E92F4C946300A50290 /* ReadinessEngine.swift in Sources */,
 			);

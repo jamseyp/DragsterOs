@@ -9,7 +9,7 @@ struct ContentView: View {
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Query(sort: \KineticSession.date, order: .forward) private var sessions: [KineticSession]
     
-    @State private var healthManager = HealthKitManager.shared
+    private var healthManager = HealthKitManager.shared
     @State private var alertManager = SystemAlertManager.shared
     
     // MARK: - 🕹️ STATE
@@ -152,7 +152,7 @@ struct ContentView: View {
             
             // 3. HISTORICAL BACKFILL
             if logs.count < 2 {
-                let historyData = await $healthManager.fetchHistoricalBiometrics(daysBack: 60)
+                let historyData = await healthManager.fetchHistoricalBiometrics(daysBack: 60)
                 let sortedData = historyData.sorted { $0.date < $1.date }
                 
                 await MainActor.run {

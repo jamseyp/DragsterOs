@@ -5,11 +5,15 @@ struct AIBriefingView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     
+    // ✨ FIXED: Added the missing sessions query needed for the JSON blob
+    @Query(sort: \KineticSession.date, order: .reverse) private var sessions: [KineticSession]
+    
     @State private var healthManager = HealthKitManager.shared
     
     // Staged Payload Data
     @State private var yesterdayNet: Double = 0
     @State private var isCompiling = true
+    @State private var isCopied = false // ✨ Feedback state for clipboard
     
     private var todayLog: TelemetryLog? {
         let startOfDay = Calendar.current.startOfDay(for: .now)
@@ -42,30 +46,53 @@ struct AIBriefingView: View {
             flags.append("WARNING: INADEQUATE RECOVERY (SLEEP)")
         }
         
-        return flags.joined(separator: " | ")
+        return flags.isEmpty ? "STATUS: NOMINAL" : flags.joined(separator: " | ")
     }
     
-    // 🧠 THE AI PROMPT CONSTRUCTOR
+    // 🧠 THE HIGH-RESOLUTION DATA BLOB (JSON)
+    private var compiledJSONPayload: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        
+        // Construct a dictionary of all relevant sensors
+        let sensorData: [String: Any] = [
+            "readiness_score": todayLog?.readinessScore ?? 0,
+            "hrv_ms": todayLog?.hrv ?? 0,
+            "resting_hr_bpm": todayLog?.restingHR ?? 0,
+            "sleep_hrs": todayLog?.sleepDuration ?? 0,
+            "thermodynamics": [
+                "yesterday_net_kcal": yesterdayNet,
+                "status": yesterdayNet < -500 ? "CRITICAL_DEFICIT" : (yesterdayNet < -50 ? "OPTIMAL_CUT" : "MAINTENANCE")
+            ],
+            "biomechanics_last_session": [
+                "avg_gct_ms": sessions.first?.groundContactTime ?? 0,
+                "avg_osc_cm": sessions.first?.verticalOscillation ?? 0,
+                "elevation_gain_m": sessions.first?.elevationGain ?? 0
+            ]
+        ]
+        
+        // Convert to String for the prompt
+        if let data = try? JSONSerialization.data(withJSONObject: sensorData, options: .prettyPrinted),
+           let jsonString = String(data: data, encoding: .utf8) {
+            return jsonString
+        }
+        return "{ \"error\": \"Data compression fault\" }"
+    }
+    
+    // 🧠 THE AI PROMPT CONSTRUCTOR (Refactored to prevent Xcode Hangs)
     private var compiledPayload: String {
         let readiness = todayLog?.readinessScore ?? 0.0
         let hrv = todayLog?.hrv ?? 0.0
         let sleep = todayLog?.sleepDuration ?? 0.0
         
-        return """
-        [SYSTEM: DRAGSTER OS - DIAGNOSTIC EXPORT]
-        COMMAND SYSTEM ASSESSMENT: \(dynamicCommandStatus)
+        let header = "[SYSTEM: DRAGSTER OS - DIAGNOSTIC EXPORT]\nCOMMAND SYSTEM ASSESSMENT: \(dynamicCommandStatus)\n\n"
+        let request = "REQUEST: Provide a concise, tactical morning briefing for the Commander based on the telemetry below.\n\n"
+        let basicData = "// TELEMETRY DATA //\nREADINESS SCORE: \(Int(readiness))/100\nHRV: \(Int(hrv)) ms\nSLEEP: \(String(format: "%.1f", sleep)) hrs\nT-1 THERMODYNAMIC BALANCE: \(Int(yesterdayNet)) kcal\n\n"
+        let bioReq = "BioMechanics: Provide a high-resolution, tactical briefing. Analyze the relationship between the Biological pillars and the Biomechanical vectors provided in the JSON blob.\n\n"
+        let jsonData = "// TELEMETRY JSON DATA //\n\(compiledJSONPayload)\n\n"
+        let directive = "// DIRECTIVE //\nAnalyze these factors (Biology, Mechanics, and Fuel). Address the specific flags raised in the COMMAND SYSTEM ASSESSMENT. Keep the tone clinical, objective, and tactical. Maximum 3 paragraphs."
         
-        REQUEST: Provide a concise, tactical morning briefing for the Commander based on the telemetry below.
-        
-        // TELEMETRY DATA //
-        READINESS SCORE: \(Int(readiness))/100
-        HRV: \(Int(hrv)) ms
-        SLEEP: \(String(format: "%.1f", sleep)) hrs
-        T-1 THERMODYNAMIC BALANCE: \(Int(yesterdayNet)) kcal
-        
-        // DIRECTIVE //
-        Analyze these factors (Biology, Mechanics, and Fuel). Address the specific flags raised in the COMMAND SYSTEM ASSESSMENT. Keep the tone clinical, objective, and tactical. Maximum 3 paragraphs.
-        """
+        return header + request + basicData + bioReq + jsonData + directive
     }
     
     var body: some View {
@@ -115,20 +142,25 @@ struct AIBriefingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
                     
-                    // 3. THE TRANSMIT BUTTON
+                    // 3. THE TRANSMIT BUTTON (Clipboard Logic)
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                        // Next Step: Trigger API Call here
-                        print("📡 Transmitting to Gemini...")
+                        UIPasteboard.general.string = compiledPayload
+                        withAnimation { isCopied = true }
+                        
+                        // Reset status after 2 seconds
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation { isCopied = false }
+                        }
                     }) {
                         HStack {
-                            Image(systemName: "waveform")
-                            Text("TRANSMIT TO GEMINI AI")
+                            Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                            Text(isCopied ? "PAYLOAD COPIED" : "COPY TO CLIPBOARD")
                         }
                         .font(.system(size: 14, weight: .black, design: .monospaced))
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(ColorTheme.prime)
+                        .background(isCopied ? .green : ColorTheme.prime)
                         .foregroundStyle(ColorTheme.background)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
@@ -139,7 +171,7 @@ struct AIBriefingView: View {
         }
         .applyTacticalOS(title: "AI BRIEFING", showBack: true)
         .task {
-            let fuel = await healthManager.fetchYesterdayEnergyBalance
+            let fuel = await healthManager.fetchYesterdayEnergyBalance()
             await MainActor.run {
                 self.yesterdayNet = fuel
                 self.isCompiling = false
