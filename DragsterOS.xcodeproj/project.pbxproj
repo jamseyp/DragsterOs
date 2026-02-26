@@ -44,6 +44,8 @@
 		425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C588B2F4F850B00EFBA4A /* PlannedMission.swift */; };
 		425C58902F4F90D500EFBA4A /* AddPlannedActivitySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */; };
 		426CBFBC2F50505800559E41 /* ChassisCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFBB2F50505500559E41 /* ChassisCommandView.swift */; };
+		426CBFBE2F50552300559E41 /* EnergyBalanceWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */; };
+		426CBFC12F50630700559E41 /* AIBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC02F50630700559E41 /* AIBriefingView.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -105,6 +107,9 @@
 		425C588B2F4F850B00EFBA4A /* PlannedMission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlannedMission.swift; sourceTree = "<group>"; };
 		425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPlannedActivitySheet.swift; sourceTree = "<group>"; };
 		426CBFBB2F50505500559E41 /* ChassisCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisCommandView.swift; sourceTree = "<group>"; };
+		426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyBalanceWidget.swift; sourceTree = "<group>"; };
+		426CBFBF2F50620600559E41 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
+		426CBFC02F50630700559E41 /* AIBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBriefingView.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -144,6 +149,7 @@
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */,
 				425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */,
 				425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */,
 				425C58832F4F718D00EFBA4A /* ManualTelemetrySheet.swift */,
@@ -207,6 +213,8 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				426CBFC02F50630700559E41 /* AIBriefingView.swift */,
+				426CBFBF2F50620600559E41 /* Untitled.swift */,
 				426CBFBB2F50505500559E41 /* ChassisCommandView.swift */,
 				42D708622F5046D700DC1091 /* LoadEngine.swift */,
 				42D708602F50441700DC1091 /* MassEfficiencyView.swift */,
@@ -364,10 +372,12 @@
 				425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */,
 				425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */,
 				425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */,
+				426CBFBE2F50552300559E41 /* EnergyBalanceWidget.swift in Sources */,
 				425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */,
 				425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */,
 				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42D708612F50441900DC1091 /* MassEfficiencyView.swift in Sources */,
+				426CBFC12F50630700559E41 /* AIBriefingView.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
 				4233D30F2F4DC7FB00B948FA /* PaddockView.swift in Sources */,
 				425C58902F4F90D500EFBA4A /* AddPlannedActivitySheet.swift in Sources */,

@@ -10,16 +10,15 @@ struct ManualTelemetrySheet: View {
     var log: TelemetryLog?
     var history: [TelemetryLog]
     
-    // ✨ Fetch sessions to calculate mechanical load for the engine
+    // ✨ Fetch sessions to calculate mechanical load
     @Query(sort: \KineticSession.date, order: .forward) private var sessions: [KineticSession]
     
-    // Local state
     @State private var manualHRV: Double = 0
     @State private var manualRHR: Double = 0
     @State private var manualSleep: Double = 0
     @State private var manualWeight: Double = 0
     
-    // Elite Protocol
+    // Elite Protocol State
     @State private var rmssd: Double = 0
     @State private var eliteScore: Int = 0
     @State private var hf: Double = 0
@@ -110,43 +109,51 @@ struct ManualTelemetrySheet: View {
     }
     
     private func saveManualData() {
-        // ✨ CALCULATE CURRENT LOAD PROFILE FOR THE ENGINE
         let currentLoad = LoadEngine.computeCurrentLoad(history: sessions)
         
-        if let current = log {
-            current.hrv = manualHRV
-            current.restingHR = manualRHR
-            current.sleepDuration = manualSleep
-            current.weightKG = manualWeight
+        Task {
+            // ✨ FETCH YESTERDAY'S FUEL (Stabilization Logic)
+            let yesterdayNet = await HealthKitManager.shared.fetchYesterdayEnergyBalance()
             
-            // ✨ FIXED: Added missing arguments (todayRHR and loadProfile)
-            current.readinessScore = ReadinessEngine.computeReadiness(
-                todayHRV: manualHRV,
-                todayRHR: manualRHR,
-                todaySleep: manualSleep,
-                history: history,
-                loadProfile: currentLoad
-            )
-        } else {
-            let newLog = TelemetryLog(
-                date: Calendar.current.startOfDay(for: .now),
-                hrv: manualHRV,
-                restingHR: manualRHR,
-                sleepDuration: manualSleep,
-                weightKG: manualWeight,
-                readinessScore: ReadinessEngine.computeReadiness(
-                    todayHRV: manualHRV,
-                    todayRHR: manualRHR,
-                    todaySleep: manualSleep,
-                    history: history,
-                    loadProfile: currentLoad
-                )
-            )
-            context.insert(newLog)
+            await MainActor.run {
+                if let current = log {
+                    current.hrv = manualHRV
+                    current.restingHR = manualRHR
+                    current.sleepDuration = manualSleep
+                    current.weightKG = manualWeight
+                    
+                    // ✨ CORRECTED: Label changed to yesterdayNetBalance
+                    current.readinessScore = ReadinessEngine.computeReadiness(
+                        todayHRV: manualHRV,
+                        todayRHR: manualRHR,
+                        todaySleep: manualSleep,
+                        yesterdayNetBalance: yesterdayNet,
+                        history: history,
+                        loadProfile: currentLoad
+                    )
+                } else {
+                    let newLog = TelemetryLog(
+                        date: Calendar.current.startOfDay(for: .now),
+                        hrv: manualHRV,
+                        restingHR: manualRHR,
+                        sleepDuration: manualSleep,
+                        weightKG: manualWeight,
+                        readinessScore: ReadinessEngine.computeReadiness(
+                            todayHRV: manualHRV,
+                            todayRHR: manualRHR,
+                            todaySleep: manualSleep,
+                            yesterdayNetBalance: yesterdayNet,
+                            history: history,
+                            loadProfile: currentLoad
+                        )
+                    )
+                    context.insert(newLog)
+                }
+                
+                try? context.save()
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                dismiss()
+            }
         }
-        
-        try? context.save()
-        UINotificationFeedbackGenerator().notificationOccurred(.success)
-        dismiss()
     }
 }

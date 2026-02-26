@@ -4,12 +4,15 @@ import SwiftData
 struct MacroCycleView: View {
     @Environment(\.dismiss) private var dismiss
     
-    // ✨ Using your new tactical nomenclature
+    // 🗄️ PERSISTENCE
     @Query(sort: \OperationalDirective.date, order: .forward) private var macroCycle: [OperationalDirective]
     
     @State private var showingAddMission = false
     
-    // Calculate today's date string to dynamically highlight the current row
+    // Grid settings for the 4-week overview
+    let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
+    
+    // Calculate today's date string
     private var todayString: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM-dd"
@@ -18,28 +21,66 @@ struct MacroCycleView: View {
     
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 32) {
                 
-                // THE TIMELINE
-                LazyVStack(spacing: 16) {
-                    ForEach(macroCycle) { plannedMission in
-                        let tactical = mapToTactical(plannedMission)
-                        
-                        NavigationLink(destination: MissionDetailView(mission: tactical)) {
-                            MacroCycleRow(mission: plannedMission, isToday: plannedMission.dateString == todayString)
+                // ✨ 1. THE STRATEGIC TIMELINE GRID (The New Component)
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("4-WEEK DEPLOYMENT WINDOW")
+                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textMuted)
+                    
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        // Display the next 28 days for tactical planning
+                        ForEach(macroCycle.prefix(28)) { directive in
+                            VStack(spacing: 4) {
+                                Text(directive.dateString.suffix(2))
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(directive.dateString == todayString ? ColorTheme.background : ColorTheme.textPrimary)
+                                
+                                Circle()
+                                    .fill(gridFuelColor(for: directive.fuelTier))
+                                    .frame(width: 6, height: 6)
+                            }
+                            .frame(height: 45)
+                            .frame(maxWidth: .infinity)
+                            .background(directive.dateString == todayString ? ColorTheme.prime : ColorTheme.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(directive.isAlteredBySystem ? ColorTheme.critical : Color.clear, lineWidth: 1)
+                            )
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal)
+                
+                // ✨ 2. THE DETAILED DIRECTIVE LIST (Your Existing Logic)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("IMMEDIATE DIRECTIVES")
+                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textMuted)
+                        .padding(.horizontal)
+                    
+                    LazyVStack(spacing: 16) {
+                        ForEach(macroCycle) { plannedMission in
+                            let tactical = mapToTactical(plannedMission)
+                            
+                            NavigationLink(destination: MissionDetailView(mission: tactical)) {
+                                MacroCycleRow(mission: plannedMission, isToday: plannedMission.dateString == todayString)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .padding(.horizontal)
+                }
             }
             .padding(.top, 20)
-            .padding(.bottom, 100) // Space for the floating button
+            .padding(.bottom, 100)
         }
-        // ✨ THE OS WRAPPER
+        // ✨ THE OS WRAPPER (Handles navigation and global state)
         .applyTacticalOS(title: "MACRO-CYCLE STRATEGY")
         
-        // ✨ FLOATING TACTICAL OVERLAY (ADD DIRECTIVE)
+        // ✨ FLOATING TACTICAL OVERLAY
         .overlay(alignment: .bottomTrailing) {
             TacticalActionButton(icon: "plus", color: ColorTheme.prime) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -47,22 +88,21 @@ struct MacroCycleView: View {
             }
             .padding(24)
         }
-        
-        // ✨ CUSTOM BACK BUTTON (Since the system nav bar is hidden)
-        .overlay(alignment: .topLeading) {
-            Button(action: { dismiss() }) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(ColorTheme.prime)
-                    .padding()
-            }
-        }
         .sheet(isPresented: $showingAddMission) {
             AddPlannedActivitySheet()
         }
     }
     
-    // MARK: - 🧠 HELPER: DATA MAPPING
+    // MARK: - 🧠 HELPERS
+    
+    private func gridFuelColor(for tier: String) -> Color {
+        if tier.contains("LOW") { return .green }
+        if tier.contains("MED") { return .yellow }
+        if tier.contains("HIGH") { return ColorTheme.critical }
+        if tier.contains("RACE") { return .purple }
+        return ColorTheme.textMuted
+    }
+    
     private func mapToTactical(_ planned: OperationalDirective) -> TacticalMission {
         let mappedFuel: FuelTier
         if planned.fuelTier.contains("LOW") { mappedFuel = .low }
@@ -97,8 +137,6 @@ struct MacroCycleRow: View {
     
     var body: some View {
         HStack(spacing: 16) {
-            
-            // 1. The Date Block
             VStack {
                 Text(mission.dateString.prefix(3).uppercased())
                     .font(.system(size: 10, weight: .black, design: .monospaced))
@@ -112,7 +150,6 @@ struct MacroCycleRow: View {
             .background(isToday ? ColorTheme.prime : ColorTheme.surface)
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // 2. The Objective Data
             VStack(alignment: .leading, spacing: 4) {
                 Text(mission.activity.uppercased())
                     .font(.system(size: 14, weight: .bold, design: .rounded))

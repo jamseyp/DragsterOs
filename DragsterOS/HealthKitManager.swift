@@ -125,6 +125,92 @@ final class HealthKitManager {
         let results = try await descriptor.result(for: healthStore)
         return results.compactMap { $0 as? HKWorkout }
     }
+    
+    // MARK: - 📊 HISTORICAL THERMODYNAMICS
+        
+        /// Fetches energy balance data for a rolling window (7, 14, or 30 days).
+        func fetchHistoricalEnergyBalance(daysBack: Int) async -> [(date: Date, intake: Double, burned: Double, net: Double)] {
+            var historicalData: [(date: Date, intake: Double, burned: Double, net: Double)] = []
+            let calendar = Calendar.current
+            let now = Date()
+            
+            // Loop backwards from today
+            for i in 0..<daysBack {
+                guard let date = calendar.date(byAdding: .day, value: -i, to: now) else { continue }
+                let startOfDay = calendar.startOfDay(for: date)
+                let endOfDay = (i == 0) ? now : calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+                
+                let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+                
+                @Sendable func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
+                    guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
+                    return await withCheckedContinuation { continuation in
+                        let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+                            let sum = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0.0
+                            continuation.resume(returning: sum)
+                        }
+                        healthStore.execute(query)
+                    }
+                }
+                
+                async let active = fetchSum(for: .activeEnergyBurned)
+                async let basal = fetchSum(for: .basalEnergyBurned)
+                async let dietary = fetchSum(for: .dietaryEnergyConsumed)
+                
+                let (a, b, d) = await (active, basal, dietary)
+                let burned = a + b
+                
+                historicalData.append((date: startOfDay, intake: d, burned: burned, net: d - burned))
+            }
+            
+            return historicalData.sorted { $0.date < $1.date }
+        }
+    
+    // MARK: - 🔋 PREVIOUS DAY FUEL CHECK
+        func fetchYesterdayEnergyBalance() async -> Double {
+            let calendar = Calendar.current
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else { return 0 }
+            let data = await fetchEnergyBalance(_for: yesterday) // Ensure your fetchEnergyBalance accepts a date!
+            return data.net
+        }
+    
+    // MARK: - 🔋 THERMODYNAMIC ENGINE
+        
+        /// Calculates the net energy balance (Intake - Total Burn) for the current day.
+    func fetchEnergyBalance(_for: Date = Date()) async -> (intake: Double, burned: Double, net: Double) {
+            let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: _for)
+            
+            // Predicate for "Today"
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: _for, options: .strictStartDate)
+            
+            // Internal helper to sum calories for a specific type
+            @Sendable func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
+                guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
+                
+                return await withCheckedContinuation { continuation in
+                    let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+                        let sum = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0.0
+                        continuation.resume(returning: sum)
+                    }
+                    healthStore.execute(query)
+                }
+            }
+            
+            // Execute concurrent fetches
+            async let activeBurn = fetchSum(for: .activeEnergyBurned)
+            async let basalBurn = fetchSum(for: .basalEnergyBurned)
+            async let dietaryIntake = fetchSum(for: .dietaryEnergyConsumed)
+            
+            let (active, basal, intake) = await (activeBurn, basalBurn, dietaryIntake)
+            
+            let totalBurned = active + basal
+            let netBalance = intake - totalBurned
+            
+            return (intake: intake, burned: totalBurned, net: netBalance)
+        }
+    
+    
 }
 
 // MARK: - 📈 KINETIC TELEMETRY (SCALARS & VECTORS)
