@@ -1,11 +1,16 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - 📝 SHEET: HYBRID INPUT
 struct AddSessionSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \RunningShoe.brand) private var inventory: [RunningShoe]
-    private var healthManager = HealthKitManager.shared
+    
+    // ✨ THE PLAN LINK QUERY (This was missing from scope!)
+    @Query private var allDirectives: [OperationalDirective]
+    
+    // ✨ FIXED MANAGER (No @State)
+    private let healthManager = HealthKitManager.shared
     
     @State private var isSyncingWatch = true
     @State private var watchWorkoutFound = false
@@ -20,12 +25,11 @@ struct AddSessionSheet: View {
     @State private var avgPower: Double = 250.0
     @State private var avgCadence: Double = 175.0
     
-    // ✨ NEW VARIABLES FOR MANUAL ENTRY FALLBACK
+    // ✨ ADVANCED BIOMECHANICS
     @State private var gct: Double = 0.0
     @State private var oscillation: Double = 0.0
     @State private var elevation: Double = 0.0
     
-    @State private var selectedShoe: RunningShoe?
     @State private var notes: String = ""
     
     var body: some View {
@@ -57,7 +61,6 @@ struct AddSessionSheet: View {
                         VStack(alignment: .leading) { Text("Duration: \(Int(duration)) min").foregroundStyle(ColorTheme.prime); Slider(value: $duration, in: 0...180, step: 1) }
                     }.listRowBackground(ColorTheme.panel)
                     
-                    // ✨ NEW: ADVANCED BIOMECHANICS SECTION
                     if selectedDiscipline == "RUN" {
                         Section(header: Text("ADVANCED TELEMETRY").font(.caption.monospaced())) {
                             VStack(alignment: .leading) { Text("GCT: \(Int(gct)) ms").foregroundStyle(.cyan); Slider(value: $gct, in: 0...400, step: 1) }
@@ -70,15 +73,6 @@ struct AddSessionSheet: View {
                         VStack(alignment: .leading) { Text("Avg HR: \(Int(averageHR)) BPM").foregroundStyle(ColorTheme.critical); Slider(value: $averageHR, in: 80...200, step: 1) }
                         VStack(alignment: .leading) { Text("RPE: \(Int(rpe))/10").foregroundStyle(ColorTheme.warning); Slider(value: $rpe, in: 1...10, step: 1) }
                     }.listRowBackground(ColorTheme.panel)
-                    
-                    if selectedDiscipline == "RUN" {
-                        Section(header: Text("CHASSIS (SHOES)").font(.caption.monospaced())) {
-                            Picker("Active Shoe", selection: $selectedShoe) {
-                                Text("NO SHOE SELECTED").tag(nil as RunningShoe?)
-                                ForEach(inventory) { shoe in Text(shoe.name).tag(shoe as RunningShoe?) }
-                            }.tint(ColorTheme.prime)
-                        }.listRowBackground(ColorTheme.panel)
-                    }
                     
                     Section(header: Text("DEBRIEF").font(.caption.monospaced())) {
                         TextField("Athlete Notes...", text: $notes, axis: .vertical).lineLimit(3).foregroundStyle(ColorTheme.textPrimary)
@@ -107,7 +101,6 @@ struct AddSessionSheet: View {
                 async let fetchedCadenceTask = healthManager.fetchAverageCadence(for: workout, isRide: isRide)
                 async let fetchedGCTTask = healthManager.fetchAverageGCT(for: workout)
                 async let fetchedOscTask = healthManager.fetchAverageOscillation(for: workout)
-                // Fix: Calling fetchElevation which we added to HealthKitManager
                 let fetchedElev = healthManager.fetchElevation(for: workout)
                 
                 let (fHR, fPower, fCad, fGCT, fOsc) = await (fetchedHRTask, fetchedPowerTask, fetchedCadenceTask, fetchedGCTTask, fetchedOscTask)
@@ -138,7 +131,14 @@ struct AddSessionSheet: View {
         await MainActor.run { isSyncingWatch = false }
     }
     
+    // MARK: 💾 LOGIC: SAVE & LINK
     private func saveSession() {
+        // ✨ MATCH TO TODAY'S MISSION
+        let today = Calendar.current.startOfDay(for: .now)
+        let matchedMission = allDirectives.first {
+            Calendar.current.startOfDay(for: $0.date) == today
+        }
+        
         let newSession = KineticSession(
             date: .now,
             discipline: selectedDiscipline,
@@ -149,22 +149,22 @@ struct AddSessionSheet: View {
             coachNotes: notes,
             avgCadence: selectedDiscipline == "STRENGTH" ? nil : avgCadence,
             avgPower: selectedDiscipline == "STRENGTH" ? nil : avgPower,
-            shoeName: selectedShoe?.name,
+            shoeName: nil, // Shoe Logic Removed
             groundContactTime: gct > 0 ? gct : nil,
             verticalOscillation: oscillation > 0 ? oscillation : nil,
-            elevationGain: elevation > 0 ? elevation : nil
+            elevationGain: elevation > 0 ? elevation : nil,
+            
+            // ✨ SECURE THE LINK TO THE PLAN
+            linkedDirectiveID: matchedMission?.id
         )
-        
-        if let shoe = selectedShoe, selectedDiscipline == "RUN" { shoe.currentMileage += distance }
         
         context.insert(newSession)
         try? context.save()
+        
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         dismiss()
         
         Task {
-            
-            
             try? await healthManager.saveWorkoutToAppleHealth(
                 discipline: selectedDiscipline,
                 durationMinutes: duration,

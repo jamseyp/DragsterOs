@@ -1,31 +1,40 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 👟 EQUIPMENT INVENTORY COMMAND
-struct EquipmentInventoryView: View {
+
+// MARK: - 🎯 STRATEGIC OBJECTIVES COMMAND
+struct StrategicObjectivesView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    // Fetch all shoes, sorting active ones to the top
-    @Query(sort: [
-        //SortDescriptor(\RunningShoe.isActive, order: .reverse),
-        SortDescriptor(\RunningShoe.currentMileage, order: .reverse)
-    ]) private var shoes: [RunningShoe]
+    // Fetch objectives from SwiftData, sorting purely by date
+        @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
+        
+        // 🧠 Tactical Memory Sort: Prioritizes active targets, then chronologically
+        private var objectives: [StrategicObjective] {
+            fetchedObjectives.sorted {
+                if $0.isCompleted == $1.isCompleted {
+                    return $0.targetDate < $1.targetDate
+                }
+                return !$0.isCompleted && $1.isCompleted // Places active (false) above completed (true)
+            }
+        }
     
-    // State for Add/Edit Sheets
+    // State for CRUD Operations
+    @State private var editingObjective: StrategicObjective?
     @State private var showingAddSheet = false
-    @State private var editingShoe: RunningShoe?
     
     var body: some View {
         VStack(spacing: 0) {
             
             // SYSTEM HEADER
             HStack {
-                Text("Shoes")
+                Text("STRATEGIC OBJECTIVES")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.textMuted)
                 Spacer()
-                Text("\(shoes.count) Logged")
+                let activeCount = objectives.filter { !$0.isCompleted }.count
+                Text("\(activeCount) ACTIVE")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(ColorTheme.prime)
             }
@@ -33,12 +42,12 @@ struct EquipmentInventoryView: View {
             .padding(.top, 20)
             .padding(.bottom, 12)
             
-            if shoes.isEmpty {
+            if objectives.isEmpty {
                 VStack(spacing: 12) {
-                    Image(systemName: "shoe.2")
+                    Image(systemName: "scope")
                         .font(.system(size: 40))
                         .foregroundStyle(ColorTheme.surfaceBorder)
-                    Text("No shoes found")
+                    Text("NO TARGETS ACQUIRED")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundStyle(ColorTheme.textMuted)
                 }
@@ -46,27 +55,26 @@ struct EquipmentInventoryView: View {
             } else {
                 // THE DATA LIST (Supports Swipe-to-Delete)
                 List {
-                    ForEach(shoes) { shoe in
-                        ShoeDataCard(shoe: shoe)
-                            // Strip default list styling to maintain Dragster OS aesthetic
+                    ForEach(objectives) { objective in
+                        ObjectiveRowCard(objective: objective)
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
                             .onTapGesture {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                editingShoe = shoe // Triggers the Edit Sheet
+                                editingObjective = objective // Triggers the Edit Sheet
                             }
                     }
-                    .onDelete(perform: deleteShoe)
+                    .onDelete(perform: deleteObjective)
                 }
                 .listStyle(.plain)
             }
             
-            // ADD NEW EQUIPMENT BUTTON
+            // MANUAL INJECTION BUTTON
             Button(action: { showingAddSheet = true }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("Add new shoe")
+                    Text("ESTABLISH NEW TARGET")
                 }
                 .font(.system(size: 14, weight: .black, design: .monospaced))
                 .frame(maxWidth: .infinity)
@@ -79,21 +87,21 @@ struct EquipmentInventoryView: View {
             .padding(.bottom, 40)
             .padding(.top, 12)
         }
-        .applyTacticalOS(title: "Equitment", showBack: true)
-        .sheet(isPresented: $showingAddSheet) {
-            // Assuming you already have an AddShoeSheet, if not we will build it.
-            AddShoeSheet()
+        .applyTacticalOS(title: "PRIMARY OBJECTIVES", showBack: true)
+        .sheet(item: $editingObjective) { objective in
+            EditObjectiveSheet(objective: objective)
         }
-        .sheet(item: $editingShoe) { shoe in
-            EditShoeSheet(shoe: shoe)
+        .sheet(isPresented: $showingAddSheet) {
+            Text("ADD OBJECTIVE SHEET GOES HERE").presentationDetents([.medium])
+            ObjectiveSetupSheet()
         }
     }
     
     // MARK: - ⚙️ LOGIC: PURGE RECORD
-    private func deleteShoe(offsets: IndexSet) {
+    private func deleteObjective(offsets: IndexSet) {
         for index in offsets {
-            let shoeToDelete = shoes[index]
-            context.delete(shoeToDelete)
+            let objectiveToDelete = objectives[index]
+            context.delete(objectiveToDelete)
         }
         do {
             try context.save()
@@ -105,63 +113,67 @@ struct EquipmentInventoryView: View {
 }
 
 // MARK: - 🧱 SUB-COMPONENT: EDIT SHEET (@Bindable)
-struct EditShoeSheet: View {
+struct EditObjectiveSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    // ✨ @Bindable directly mutates the database object in real-time
-    @Bindable var shoe: RunningShoe
+    // ✨ @Bindable directly mutates the database object
+    @Bindable var objective: StrategicObjective
     
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Brand and Model")) {
-                    TextField("Model Name", text: $shoe.model)
+                Section(header: Text("TARGET PARAMETERS")) {
+                    TextField("Event Name", text: $objective.eventName)
                         .font(.system(size: 16, weight: .bold, design: .monospaced))
-                    TextField("Brand", text: $shoe.brand)
-                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    
+                    TextField("Location", text: $objective.location)
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundStyle(ColorTheme.prime)
+                    
+                    DatePicker("Target Date", selection: $objective.targetDate, displayedComponents: [.date])
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
                 }
                 
-                Section(header: Text("LIFECYCLE DATA (KM)")) {
+                Section(header: Text("KINETIC TARGETS")) {
                     HStack {
-                        Text("Current Millage")
+                        Text("TARGET POWER (W)")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         Spacer()
-                        TextField("0", value: $shoe.currentMileage, format: .number)
-                            .keyboardType(.decimalPad)
+                        TextField("0", value: $objective.targetPower, format: .number)
+                            .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: 16, weight: .heavy, design: .rounded))
                             .foregroundStyle(ColorTheme.prime)
                     }
                     
                     HStack {
-                        Text("MAX LIFESPAN")
+                        Text("TARGET PACE")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         Spacer()
-                        TextField("0", value: $shoe.maxLifespan, format: .number)
-                            .keyboardType(.decimalPad)
+                        TextField("4:30 /km", text: $objective.targetPace)
                             .multilineTextAlignment(.trailing)
                             .font(.system(size: 16, weight: .heavy, design: .rounded))
-                            .foregroundStyle(ColorTheme.textPrimary)
+                            .foregroundStyle(ColorTheme.prime)
                     }
                 }
                 
                 Section {
-                    Toggle("In Use?", isOn: $shoe.isActive)
-                        .tint(ColorTheme.prime)
+                    Toggle("MISSION ACCOMPLISHED", isOn: $objective.isCompleted)
+                        .tint(.green)
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                 } footer: {
-                    Text("Inactive shoes will not appeer in selection menus.")
+                    Text("Marking this as accomplished will archive it and remove it from active tracking.")
                         .font(.system(size: 10))
                 }
             }
-            .applyTacticalOS(title: "Update Shoe", showBack: false)
+            .applyTacticalOS(title: "RECALIBRATE TARGET", showBack: false)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
+                    Button("COMMIT") {
                         try? context.save()
                         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         dismiss()
@@ -174,31 +186,39 @@ struct EditShoeSheet: View {
     }
 }
 
-// MARK: - 🧱 SUB-COMPONENT: SHOE CARD UI
-struct ShoeDataCard: View {
-    let shoe: RunningShoe
+// MARK: - 🧱 SUB-COMPONENT: OBJECTIVE ROW UI
+struct ObjectiveRowCard: View {
+    let objective: StrategicObjective
     
-    var healthPercentage: Double {
-        guard shoe.maxLifespan > 0 else { return 0 }
-        return min(shoe.currentMileage / shoe.maxLifespan, 1.0)
+    // Calculate days remaining
+    private var daysRemaining: Int {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.day], from: calendar.startOfDay(for: .now), to: calendar.startOfDay(for: objective.targetDate))
+        return components.day ?? 0
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(shoe.brand.uppercased())
+                    Text("T-MINUS \(max(daysRemaining, 0)) DAYS • \(objective.location.uppercased())")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundStyle(ColorTheme.textMuted)
-                    Text(shoe.model.uppercased())
+                        .foregroundStyle(objective.isCompleted ? ColorTheme.textMuted : ColorTheme.warning)
+                    
+                    Text(objective.eventName.uppercased())
                         .font(.system(size: 16, weight: .heavy, design: .monospaced))
-                        .foregroundStyle(shoe.isActive ? ColorTheme.textPrimary : ColorTheme.textMuted.opacity(0.5))
+                        .foregroundStyle(objective.isCompleted ? ColorTheme.textMuted : ColorTheme.textPrimary)
+                        .strikethrough(objective.isCompleted, color: ColorTheme.textMuted)
                 }
                 
                 Spacer()
                 
-                if !shoe.isActive {
-                    Text("RETIRED")
+                if objective.isCompleted {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.green)
+                } else {
+                    Text(objective.targetDate.formatted(date: .abbreviated, time: .omitted).uppercased())
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .padding(.horizontal, 6).padding(.vertical, 4)
                         .background(ColorTheme.surfaceBorder)
@@ -207,34 +227,31 @@ struct ShoeDataCard: View {
                 }
             }
             
-            // Lifecycle Gauge
-            VStack(alignment: .trailing, spacing: 6) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2).fill(ColorTheme.background)
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(healthPercentage > 0.85 ? ColorTheme.critical : ColorTheme.prime)
-                            .frame(width: geo.size.width * healthPercentage)
-                    }
-                }
-                .frame(height: 6)
-                
+            // KINETIC METRICS
+            HStack(spacing: 16) {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text("\(Int(shoe.currentMileage))")
+                    Text("\(objective.targetPower)")
                         .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundStyle(ColorTheme.textPrimary)
-                    Text("/ \(Int(shoe.maxLifespan)) KM")
+                        .foregroundStyle(ColorTheme.prime)
+                    Text(" W")
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundStyle(ColorTheme.textMuted)
                 }
+                
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(objective.targetPace.uppercased())
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(ColorTheme.prime)
+                }
             }
+            .opacity(objective.isCompleted ? 0.5 : 1.0)
         }
         .padding()
         .background(ColorTheme.surface)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .stroke(shoe.isActive ? ColorTheme.surfaceBorder : Color.clear, lineWidth: 1)
+                .stroke(objective.isCompleted ? Color.green.opacity(0.3) : ColorTheme.surfaceBorder, lineWidth: 1)
         )
     }
 }

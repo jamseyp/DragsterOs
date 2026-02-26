@@ -9,6 +9,9 @@ struct ContentView: View {
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Query(sort: \KineticSession.date, order: .forward) private var sessions: [KineticSession]
     
+    // ✨ NEW: Query the macro-cycle to pull today's Fuel Tier
+    @Query(sort: \OperationalDirective.date, order: .forward) private var missions: [OperationalDirective]
+    
     private var healthManager = HealthKitManager.shared
     @State private var alertManager = SystemAlertManager.shared
     
@@ -20,6 +23,11 @@ struct ContentView: View {
     private var todayLog: TelemetryLog? {
         let startOfDay = Calendar.current.startOfDay(for: .now)
         return logs.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) })
+    }
+    
+    private var todayMission: OperationalDirective? {
+        let startOfDay = Calendar.current.startOfDay(for: .now)
+        return missions.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) })
     }
     
     private var readiness: Double { todayLog?.readinessScore ?? 0.0 }
@@ -38,9 +46,17 @@ struct ContentView: View {
                         .padding(.horizontal)
                         .padding(.top, 20)
                     
+                    // ✨ THERMODYNAMIC FUEL GAUGE (Macro & Calorie Tracking)
+                    ThermodynamicFuelWidget(
+                        plannedTier: todayMission?.fuelTier,
+                        currentWeightKG: weight > 0 ? weight : 80.0 // Fallback to 80kg if unlogged
+                    )
+                    .padding(.horizontal)
+                    
                     // ✨ THERMODYNAMIC FUEL GAUGE (Shows Today's progress)
-                    EnergyBalanceWidget()
-                        .padding(.horizontal)
+                                  EnergyBalanceWidget()
+                                      .padding(.horizontal)
+                    
                     
                     ReadinessTrendChart(logs: logs)
                         .padding(.horizontal)
@@ -91,6 +107,12 @@ struct ContentView: View {
                         NavigationLink(destination: OperationalBriefingView()) {
                             DashboardMenuButton(title: "TACTICAL BRIEFING", icon: "list.clipboard.fill", color: ColorTheme.prime)
                         }
+                        
+                        // ✨ NEW: The door to your Strategic Objectives
+                        NavigationLink(destination: StrategicObjectivesView()) {
+                            DashboardMenuButton(title: "STRATEGIC OBJECTIVES", icon: "scope", color: ColorTheme.critical)
+                        }
+                        
                         NavigationLink(destination: AIBriefingView()) {
                             DashboardMenuButton(title: "AI BRIEFING", icon: "cpu", color: ColorTheme.prime)
                         }
@@ -158,7 +180,6 @@ struct ContentView: View {
                 await MainActor.run {
                     var rollingHistory: [TelemetryLog] = []
                     for bio in sortedData {
-                        // ✨ Create log object first
                         let newLog = TelemetryLog(
                             date: bio.date,
                             hrv: bio.hrv,
@@ -167,7 +188,6 @@ struct ContentView: View {
                             weightKG: 0.0,
                             readinessScore: 0.0
                         )
-                        // ✨ Pass log object to engine
                         newLog.readinessScore = ReadinessEngine.computeReadiness(
                             todayLog: newLog,
                             history: rollingHistory,
@@ -192,7 +212,6 @@ struct ContentView: View {
                 let currentReadiness: Double
                 
                 if let existingLog = todayLog {
-                    // ✨ THE ELITE SHIELD: Only update Apple Health HRV if RMSSD is blank
                     if metrics.hrv > 0 && existingLog.rmssd == nil { existingLog.hrv = metrics.hrv }
                     if metrics.restingHR > 0 { existingLog.restingHR = metrics.restingHR }
                     if metrics.sleepHours > 0 { existingLog.sleepDuration = metrics.sleepHours }

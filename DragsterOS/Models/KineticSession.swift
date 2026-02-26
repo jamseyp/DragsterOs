@@ -7,22 +7,25 @@ import SwiftUI
 final class KineticSession {
     @Attribute(.unique) var id: UUID
     var date: Date
-    var discipline: String // e.g., "RUN", "ROW", "SPIN", "STRENGTH"
+    var discipline: String
     var durationMinutes: Double
     var distanceKM: Double
     var averageHR: Double
     var rpe: Int
     var coachNotes: String
     
-    // ✨ HIGH-RESOLUTION TELEMETRY
+    // TELEMETRY
     var avgCadence: Double?
     var avgPower: Double?
     var shoeName: String?
     
-    // ✨ NEW: ADVANCED BIOMECHANICS & TERRAIN
-    var groundContactTime: Double? // ms
-    var verticalOscillation: Double? // cm
-    var elevationGain: Double? // meters
+    // ADVANCED BIOMECHANICS
+    var groundContactTime: Double?
+    var verticalOscillation: Double?
+    var elevationGain: Double?
+    
+    // ✨ THE MISSING LINK TO THE TRAINING PLAN
+    var linkedDirectiveID: UUID?
     
     // MARK: - 🎨 UI COMPUTED PROPERTIES
     @Transient var disciplineColor: Color {
@@ -59,7 +62,8 @@ final class KineticSession {
         shoeName: String? = nil,
         groundContactTime: Double? = nil,
         verticalOscillation: Double? = nil,
-        elevationGain: Double? = nil
+        elevationGain: Double? = nil,
+        linkedDirectiveID: UUID? = nil // ✨ NOW THE COMPILER KNOWS IT EXISTS
     ) {
         self.id = UUID()
         self.date = date
@@ -75,6 +79,7 @@ final class KineticSession {
         self.groundContactTime = groundContactTime
         self.verticalOscillation = verticalOscillation
         self.elevationGain = elevationGain
+        self.linkedDirectiveID = linkedDirectiveID // ✨ SAVED TO DATABASE
     }
     
     // MARK: - 🧠 MECHANICAL LOAD CALCULATOR (TSS)
@@ -94,16 +99,25 @@ final class KineticSession {
 
 // MARK: - 🤖 AI COACH TRANSLATION
 extension KineticSession {
-    func generateFullTacticalExcerpt(readiness: Int?) -> String {
+    // ✨ FIXED THE "PLAN" SCOPE ERROR: Now explicitly uses 'mission'
+    func generateFullTacticalExcerpt(readiness: Int?, mission: OperationalDirective?) -> String {
         let pace = durationMinutes / (distanceKM > 0 ? distanceKM : 1.0)
         let mins = Int(pace)
         let secs = Int((pace - Double(mins)) * 60)
         let paceString = distanceKM > 0 ? String(format: "%d:%02d/km", mins, secs) : "N/A"
         
+        let missionTitle = mission?.activity ?? "FREE RUN (NO DIRECTIVE)"
+        let missionGoal = mission?.powerTarget ?? "N/A"
+        let ef = (avgPower != nil && averageHR > 0) ? String(format: "%.2f", avgPower! / averageHR) : "N/A"
+        
         return """
         🏎️ DRAGSTER OS: FULL SPECTRUM DEBRIEF
         ---
         SESSION: \(discipline) | \(date.formatted(date: .abbreviated, time: .shortened))
+        
+        [TACTICAL COMPLIANCE]
+        - ASSIGNED MISSION: \(missionTitle)
+        - STATED GOAL: \(missionGoal)
         
         [BIOLOGICAL CONTEXT]
         - MORNING READINESS: \(readiness != nil ? "\(readiness!)/100" : "DATA UNMAPPED")
@@ -122,14 +136,18 @@ extension KineticSession {
         - ELEVATION GAIN: \(elevationGain != nil ? "\(Int(elevationGain!)) m" : "N/A")
         
         [STRUCTURAL LOAD]
-        - CHASSIS (SHOES): \(shoeName ?? "Not Specified")
-        - HEART RATE: \(Int(averageHR)) BPM
+        - AVG HEART RATE: \(Int(averageHR)) BPM
+        - BIO-KINETIC RATIO (EF): \(ef) W/bpm
         
         [ATHLETE NOTES]
         "\(coachNotes.isEmpty ? "None." : coachNotes)"
         
         ---
-        INSTRUCTION TO AI COACH: Review this \(discipline) data. Analyze my mechanical efficiency, specifically evaluating the Ground Contact Time and Vertical Oscillation. Are my mechanics breaking down and leaking watts into the pavement, or am I snapping off the ground efficiently?
+        INSTRUCTION TO AI COACH: 
+        Perform a Bio-Kinetic Diagnostic for the current training phase (10k/HM).
+        1. DIRECTIVE COMPLIANCE: Compare this session against the [TACTICAL COMPLIANCE] block. Did the athlete execute the prescribed intensity, or was there "Executive Over-reach"?
+        2. ENGINE EFFICIENCY: Analyze the Efficiency Factor (EF: Power/HR). Is the cardiovascular engine becoming more economical at this specific intensity?
+        3. MECHANICAL DURABILITY: Evaluate GCT and Oscillation. Identify any "wattage leaks" or structural breakdown indicative of fatigue for a 95kg chassis.
         """
     }
 }

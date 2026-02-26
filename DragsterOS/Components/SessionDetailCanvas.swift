@@ -6,16 +6,26 @@ struct SessionDetailCanvas: View {
     let session: KineticSession
     
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
+    
+    // ✨ MISSION COMPLIANCE LINK
+    @Query private var allDirectives: [OperationalDirective]
+    
     @Environment(\.dismiss) private var dismiss
     
     // ✨ JIT Data Arrays for Charts
-    @State private var healthManager = HealthKitManager.shared
+    private let healthManager = HealthKitManager.shared // FIXED: No @State
+    
     @State private var hrArray: [(Date, Double)] = []
     @State private var powerArray: [(Date, Double)] = []
     @State private var cadenceArray: [(Date, Double)] = []
     @State private var isLoadingVectors = true
     @State private var gctSeries: [(Date, Double)] = []
     @State private var oscillationSeries: [(Date, Double)] = []
+    
+    // ✨ COMPUTED PROPERTY TO GRAB THE ACTUAL MISSION OBJECT
+    private var matchedDirective: OperationalDirective? {
+        allDirectives.first { $0.id == session.linkedDirectiveID }
+    }
     
     // MARK: - 🧠 AEROBIC DECOUPLING ENGINE
     private var aerobicDecoupling: Double? {
@@ -104,7 +114,7 @@ struct SessionDetailCanvas: View {
                 "distance_km": session.distanceKM,
                 "rpe": session.rpe,
                 "morning_readiness_score": morningReadiness ?? 0,
-                "chassis_equipment": session.shoeName ?? "NONE"
+                // Removed chassis_equipment per previous purge
             ],
             "scalar_averages": [
                 "avg_hr": Int(session.averageHR),
@@ -125,8 +135,28 @@ struct SessionDetailCanvas: View {
         
         if let data = try? JSONSerialization.data(withJSONObject: payloadDict, options: .prettyPrinted),
            let jsonString = String(data: data, encoding: .utf8) {
+            
+            // ✨ FIXED: Added matchedDirective handling
+            let missionTitle = matchedDirective?.activity ?? "FREE RUN (NO DIRECTIVE)"
+            let missionGoal = matchedDirective?.powerTarget ?? "N/A"
+            
             return """
             [SYSTEM: DRAGSTER OS - HIGH-RES SESSION EXPORT]
+            ---
+            INSTRUCTION TO AI COACH: 
+            Perform a Bio-Kinetic Diagnostic for the current training phase (10k/HM).
+
+            1. DIRECTIVE COMPLIANCE: Compare this session against the [MISSION CONTEXT] block. Did the athlete execute the prescribed intensity, or was there "Executive Over-reach"?
+            2. ENGINE EFFICIENCY: Analyze the Efficiency Factor (EF: Power/HR). Is the cardiovascular engine becoming more economical at this specific intensity?
+            3. MECHANICAL DURABILITY: Compare early-session Biomechanics (GCT/Oscillation) against late-session telemetry. Identify any "wattage leaks" or structural breakdown indicative of fatigue for a 95kg chassis.
+            4. ADAPTATION STATUS: Cross-reference this session's mechanical load against the Morning Readiness Score (Elite HRV).
+            ---
+            
+            MISSION CONTEXT:
+            - PLANNED: \(missionTitle)
+            - GOAL: \(missionGoal)
+            - ACTUAL: \(Int(session.avgPower ?? 0))W @ \(Int(session.averageHR)) BPM
+            
             REQUEST: Perform a deep tactical analysis of this session's mechanical and biological vectors.
             
             // TELEMETRY JSON //
@@ -163,7 +193,27 @@ struct SessionDetailCanvas: View {
                 .padding(.horizontal)
                 .padding(.top, 20)
                 
-                // 2. HERO METRICS
+                // ✨ 2. THE MISSION COMPLIANCE BANNER
+                if let mission = matchedDirective {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("ASSIGNED MISSION")
+                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                            .foregroundStyle(ColorTheme.prime)
+                        Text(mission.activity.uppercased())
+                            .font(.system(size: 18, weight: .black, design: .rounded))
+                        Text("GOAL: \(mission.powerTarget)")
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .foregroundStyle(ColorTheme.textMuted)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(ColorTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(ColorTheme.prime.opacity(0.3), lineWidth: 1))
+                    .padding(.horizontal)
+                }
+                
+                // 3. HERO METRICS
                 VStack(spacing: 8) {
                     Image(systemName: session.disciplineIcon)
                         .font(.system(size: 40))
@@ -173,7 +223,7 @@ struct SessionDetailCanvas: View {
                         .foregroundStyle(ColorTheme.textPrimary)
                 }
                 
-                // 3. SCALAR GRID: KINETICS
+                // 4. SCALAR GRID: KINETICS
                 HStack(spacing: 12) {
                     TelemetryBlock(title: "AVG POWER", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
                     TelemetryBlock(title: "CADENCE", value: session.avgCadence != nil ? "\(Int(session.avgCadence!))" : "-", unit: "SPM")
@@ -181,7 +231,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // 4. SCALAR GRID: ADVANCED BIOMECHANICS
+                // 5. SCALAR GRID: ADVANCED BIOMECHANICS
                 if session.groundContactTime != nil || session.verticalOscillation != nil || session.elevationGain != nil {
                     HStack(spacing: 12) {
                         if let gct = session.groundContactTime {
@@ -197,7 +247,7 @@ struct SessionDetailCanvas: View {
                     .padding(.horizontal)
                 }
 
-                // 5. SCALAR GRID: BIOMETRICS
+                // 6. SCALAR GRID: BIOMETRICS
                 HStack(spacing: 12) {
                     TelemetryBlock(title: "READINESS", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
                     TelemetryBlock(title: "AVG HR", value: "\(Int(session.averageHR))", unit: "BPM")
@@ -205,7 +255,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // 6. VECTOR CHARTS (JIT Rendered)
+                // 7. VECTOR CHARTS (JIT Rendered)
                 VStack(spacing: 16) {
                     if isLoadingVectors {
                         ProgressView().tint(ColorTheme.prime).padding(.vertical, 40)
@@ -220,15 +270,15 @@ struct SessionDetailCanvas: View {
                             TelemetryChartCard(title: "CADENCE SPARKLINE", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "SPM")
                         }
                         if !gctSeries.isEmpty {
-                            TelemetryChartCard(title: "GCT", icon: "footprint.fill", data: gctSeries, color: .blue, unit:"S")
+                            TelemetryChartCard(title: "GCT", icon: "footprint.fill", data: gctSeries, color: .blue, unit:"MS") // Fixed unit to MS
                         }
                         if !oscillationSeries.isEmpty {
                             TelemetryChartCard(title: "Vertical Oscillation", icon: "arrow.up.and.down.and.sparkles", data: oscillationSeries, color: .yellow, unit: "CM")
                         }
                         
-                        // ✨ AEROBIC DECOUPLING METRIC
+                        // AEROBIC DECOUPLING METRIC
                         if let decoupling = aerobicDecoupling {
-                            let isEfficient = decoupling <= 5.0 // < 5% drift is considered highly fit
+                            let isEfficient = decoupling <= 5.0
                             
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("AEROBIC DECOUPLING (Pa:Hr)")
@@ -299,13 +349,6 @@ struct SessionDetailCanvas: View {
                     }
                 }
                 .padding(.horizontal)
-                
-                // 7. CHASSIS / EQUIPMENT
-                if let shoe = session.shoeName {
-                    Label("CHASSIS: \(shoe.uppercased())", systemImage: "shoe.2.fill")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .foregroundStyle(ColorTheme.textMuted)
-                }
                 
                 // 8. ATHLETE NOTES
                 if !session.coachNotes.isEmpty {

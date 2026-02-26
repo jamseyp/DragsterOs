@@ -2,8 +2,6 @@ import SwiftUI
 import SwiftData
 
 // MARK: - 🗺️ OPERATIONAL LOGBOOK
-/// The primary timeline for Dragster OS. This view manages the display of all historical
-/// directives and provides the interface for manual entry and HealthKit synchronization.
 struct GarageLogView: View {
     
     // MARK: - 🗄️ PERSISTENCE
@@ -14,6 +12,7 @@ struct GarageLogView: View {
     
     // MARK: - 🕹️ STATE MANAGEMENT
     @State private var showingAddSession = false
+    @State private var editingSession: KineticSession?
     @State private var healthManager = HealthKitManager.shared
     @State private var isSyncingHistory = false
     
@@ -24,7 +23,6 @@ struct GarageLogView: View {
                 
                 // MARK: 📜 TIMELINE
                 if sessions.isEmpty {
-                    /// Standardized Empty State
                     ContentUnavailableView(
                         "NO DIRECTIVES ANALYZED",
                         systemImage: "bolt.slash.fill",
@@ -33,13 +31,28 @@ struct GarageLogView: View {
                     .foregroundStyle(ColorTheme.prime)
                     .padding(.top, 100)
                 } else {
-                    /// LazyVStack ensures performance remains fluid
+                    // ✨ REVERTED: Back to high-performance LazyVStack
                     LazyVStack(spacing: 16) {
                         ForEach(sessions) { session in
                             NavigationLink(destination: SessionDetailCanvas(session: session)) {
                                 SessionSummaryCard(session: session)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            // ✨ NEW: Context Menu for Edit/Delete (Fixes the Navigation Bug)
+                            .contextMenu {
+                                Button(action: {
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    editingSession = session
+                                }) {
+                                    Label("OVERRIDE METRICS", systemImage: "slider.horizontal.3")
+                                }
+                                
+                                Button(role: .destructive, action: {
+                                    deleteSingleSession(session)
+                                }) {
+                                    Label("PURGE RECORD", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -48,8 +61,7 @@ struct GarageLogView: View {
             .padding(.vertical, 20)
             .padding(.bottom, 100) // Padding for floating buttons
         }
-        // ✨ THE OS WRAPPER: Handles background, header, and hides system nav
-        .applyTacticalOS(title: "KINETIC LOGBOOK")
+        .applyTacticalOS(title: "KINETIC LOGBOOK", showBack: true)
         
         // ✨ FLOATING TACTICAL OVERLAYS
         .overlay(alignment: .bottomTrailing) {
@@ -68,22 +80,45 @@ struct GarageLogView: View {
             .disabled(isSyncingHistory)
         }
         .sheet(isPresented: $showingAddSession) {
-            AddSessionSheet()
+            Text("ADD SESSION SHEET GOES HERE").presentationDetents([.medium])
+        }
+        .sheet(item: $editingSession) { session in
+            EditSessionSheet(session: session)
         }
     }
     
-    // MARK: - 🧠 LOGIC: HISTORICAL SYNC (SCALARS)
+    // MARK: - ⚙️ LOGIC: PURGE RECORD (Context Menu Version)
+    private func deleteSingleSession(_ session: KineticSession) {
+        context.delete(session)
+        do {
+            try context.save()
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        } catch {
+            print("❌ DELETE FAULT: \(error.localizedDescription)")
+        }
+    }
+    
+    // MARK: - 🧠 LOGIC: HISTORICAL SYNC
     private func ingestHistoricalData() async {
-        isSyncingHistory = true
+        await MainActor.run { isSyncingHistory = true }
         
         do {
             let historicalWorkouts = try await healthManager.fetchHistoricalWorkouts(daysBack: 30)
+            
+            let planDescriptor = FetchDescriptor<OperationalDirective>()
+            let existingMissions: [OperationalDirective] = await MainActor.run {
+                (try? context.fetch(planDescriptor)) ?? []
+            }
+            
+            let existingSessionDates: [Date] = await MainActor.run {
+                sessions.map { $0.date }
+            }
+            
             var newSessions: [KineticSession] = []
             
             for workout in historicalWorkouts {
-                // Anti-cloning logic
-                let alreadyExists = sessions.contains {
-                    abs($0.date.timeIntervalSince(workout.startDate)) < 60
+                let alreadyExists = existingSessionDates.contains {
+                    abs($0.timeIntervalSince(workout.startDate)) < 60
                 }
                 
                 if !alreadyExists {
@@ -104,7 +139,11 @@ struct GarageLogView: View {
                     
                     let isRide = (discipline == "SPIN")
                     
-                    // ✨ FETCH ALL SCALARS IN PARALLEL (Including new Biomechanics)
+                    let workoutDay = Calendar.current.startOfDay(for: workout.startDate)
+                    let matchedMission = existingMissions.first {
+                        Calendar.current.startOfDay(for: $0.date) == workoutDay
+                    }
+                    
                     async let hrTask = healthManager.fetchAverageHR(for: workout)
                     async let pwrTask = healthManager.fetchAveragePower(for: workout, isRide: isRide)
                     async let cadTask = healthManager.fetchAverageCadence(for: workout, isRide: isRide)
@@ -120,21 +159,21 @@ struct GarageLogView: View {
                         durationMinutes: duration,
                         distanceKM: distance,
                         averageHR: trueAvgHR,
-                        rpe: 5, // Subjective, defaults to 5
+                        rpe: 5,
                         coachNotes: "System Import: Apple Health",
                         avgCadence: trueAvgCadence > 0 ? trueAvgCadence : nil,
                         avgPower: trueAvgPower > 0 ? trueAvgPower : nil,
                         shoeName: nil,
                         groundContactTime: trueGCT > 0 ? trueGCT : nil,
                         verticalOscillation: trueOsc > 0 ? trueOsc : nil,
-                        elevationGain: elevResult > 0 ? elevResult : nil
+                        elevationGain: elevResult > 0 ? elevResult : nil,
+                        linkedDirectiveID: matchedMission?.id
                     )
                     
                     newSessions.append(importedSession)
                 }
             }
             
-            // Push UI updates back to the Main Actor
             await MainActor.run {
                 if !newSessions.isEmpty {
                     for session in newSessions {
@@ -155,5 +194,58 @@ struct GarageLogView: View {
     }
 }
 
-
-
+// MARK: - 🧱 SUB-COMPONENT: EDIT SHEET (@Bindable)
+struct EditSessionSheet: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    
+    @Bindable var session: KineticSession
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("SUBJECTIVE TELEMETRY")) {
+                    HStack {
+                        Text("RPE (EFFORT)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(ColorTheme.textMuted)
+                        Spacer()
+                        Picker("RPE", selection: $session.rpe) {
+                            ForEach(1...10, id: \.self) { val in
+                                Text("\(val)/10").tag(val)
+                            }
+                        }
+                        .tint(ColorTheme.prime)
+                    }
+                }
+                
+                Section(header: Text("ATHLETE / COACH NOTES")) {
+                    TextEditor(text: $session.coachNotes)
+                        .frame(minHeight: 120)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                }
+                
+                Section(header: Text("CHASSIS DEPLOYMENT")) {
+                    TextField("Shoe Name", text: Binding(
+                        get: { session.shoeName ?? "" },
+                        set: { session.shoeName = $0 }
+                    ))
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                }
+            }
+            .applyTacticalOS(title: "OVERRIDE SESSION DATA", showBack: false)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("COMMIT") {
+                        try? context.save()
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                        dismiss()
+                    }
+                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                    .foregroundStyle(ColorTheme.prime)
+                }
+            }
+        }
+    }
+}

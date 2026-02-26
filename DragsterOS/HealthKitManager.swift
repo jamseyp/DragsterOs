@@ -37,7 +37,12 @@ final class HealthKitManager {
             
             // ✨ NEW: BIOMECHANICS AUTHORIZATION
             HKQuantityType(.runningGroundContactTime),
-            HKQuantityType(.runningVerticalOscillation)
+            HKQuantityType(.runningVerticalOscillation),
+            
+            // Macronutrient info
+            HKQuantityType(.dietaryProtein),
+            HKQuantityType(.dietaryCarbohydrates),
+            HKQuantityType(.dietaryFatTotal)
         ]
         
         let writeTypes: Set<HKSampleType> = [
@@ -484,6 +489,40 @@ extension HealthKitManager {
                 return a.0 < b.0 // .0 refers to the Date in the tuple (Date, Double, Double, Double)
             })
         }
+ 
+    
+    // Add this beneath fetchEnergyBalance()
+        
+        /// Fetches the macronutrient breakdown for a specific date.
+        func fetchDailyMacros(for date: Date = .now) async -> (protein: Double, carbs: Double, fat: Double) {
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: date)
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+            
+            // Helper to sum a quantity type in grams
+            func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
+                guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
+                return await withCheckedContinuation { continuation in
+                    let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
+                        let sum = result?.sumQuantity()?.doubleValue(for: .gram()) ?? 0.0
+                        continuation.resume(returning: sum)
+                    }
+                    healthStore.execute(query)
+                }
+            }
+            
+            // Concurrently fetch all three macros
+            async let p = fetchSum(for: .dietaryProtein)
+            async let c = fetchSum(for: .dietaryCarbohydrates)
+            async let f = fetchSum(for: .dietaryFatTotal)
+            
+            let (protein, carbs, fat) = await (p, c, f)
+            
+            return (protein: protein, carbs: carbs, fat: fat)
+        }
+    
     
     /// Fetches a high-resolution series of Ground Contact Time (GCT) samples in milliseconds.
         func fetchGCTSeries(start: Date, durationMinutes: Double) async -> [(Date, Double)] {

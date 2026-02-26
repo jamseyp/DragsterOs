@@ -1,187 +1,230 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - 🗓️ MACRO-CYCLE COMMAND
 struct MacroCycleView: View {
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    // 🗄️ PERSISTENCE
-    @Query(sort: \OperationalDirective.date, order: .forward) private var macroCycle: [OperationalDirective]
+    // Fetch upcoming missions, sorted chronologically
+    @Query(sort: \OperationalDirective.date, order: .forward) private var missions: [OperationalDirective]
     
-    @State private var showingAddMission = false
+    // State for CRUD Operations
+    @State private var editingMission: OperationalDirective?
+    @State private var showingAddSheet = false
     
-    // Grid settings for the 4-week overview
-    let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 7)
-    
-    // Calculate today's date string
-    private var todayString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM-dd"
-        return formatter.string(from: Date())
+    // Filter out past missions for the active view (optional tactical choice)
+    private var upcomingMissions: [OperationalDirective] {
+        let today = Calendar.current.startOfDay(for: .now)
+        return missions.filter { $0.date >= today }
     }
     
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 32) {
-                
-                // ✨ 1. THE STRATEGIC TIMELINE GRID (The New Component)
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("4-WEEK DEPLOYMENT WINDOW")
-                        .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundStyle(ColorTheme.textMuted)
-                    
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        // Display the next 28 days for tactical planning
-                        ForEach(macroCycle.prefix(28)) { directive in
-                            VStack(spacing: 4) {
-                                Text(directive.dateString.suffix(2))
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(directive.dateString == todayString ? ColorTheme.background : ColorTheme.textPrimary)
-                                
-                                Circle()
-                                    .fill(gridFuelColor(for: directive.fuelTier))
-                                    .frame(width: 6, height: 6)
-                            }
-                            .frame(height: 45)
-                            .frame(maxWidth: .infinity)
-                            .background(directive.dateString == todayString ? ColorTheme.prime : ColorTheme.surface)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(directive.isAlteredBySystem ? ColorTheme.critical : Color.clear, lineWidth: 1)
-                            )
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                
-                // ✨ 2. THE DETAILED DIRECTIVE LIST (Your Existing Logic)
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("IMMEDIATE DIRECTIVES")
-                        .font(.system(size: 10, weight: .black, design: .monospaced))
-                        .foregroundStyle(ColorTheme.textMuted)
-                        .padding(.horizontal)
-                    
-                    LazyVStack(spacing: 16) {
-                        ForEach(macroCycle) { plannedMission in
-                            let tactical = mapToTactical(plannedMission)
-                            
-                            NavigationLink(destination: MissionDetailView(mission: tactical)) {
-                                MacroCycleRow(mission: plannedMission, isToday: plannedMission.dateString == todayString)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                        }
-                    }
-                    .padding(.horizontal)
-                }
+        VStack(spacing: 0) {
+            
+            // SYSTEM HEADER
+            HStack {
+                Text("Planned Workouts")
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(ColorTheme.textMuted)
+                Spacer()
+                Text("\(upcomingMissions.count) PENDING")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(ColorTheme.prime)
             }
+            .padding(.horizontal)
             .padding(.top, 20)
-            .padding(.bottom, 100)
-        }
-        // ✨ THE OS WRAPPER (Handles navigation and global state)
-        .applyTacticalOS(title: "MACRO-CYCLE STRATEGY")
-        
-        // ✨ FLOATING TACTICAL OVERLAY
-        .overlay(alignment: .bottomTrailing) {
-            TacticalActionButton(icon: "plus", color: ColorTheme.prime) {
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                showingAddMission = true
+            .padding(.bottom, 12)
+            
+            
+            
+            if upcomingMissions.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "calendar.badge.exclamationmark")
+                        .font(.system(size: 40))
+                        .foregroundStyle(ColorTheme.surfaceBorder)
+                    Text("NO MISSIONS SCHEDULED")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textMuted)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                // THE DATA LIST (Supports Swipe-to-Delete)
+                List {
+                    ForEach(upcomingMissions) { mission in
+                        DirectiveRowCard(directive: mission)
+                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .onTapGesture {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                editingMission = mission // Triggers the Edit Sheet
+                            }
+                    }
+                    .onDelete(perform: deleteMission)
+                }
+                .listStyle(.plain)
             }
-            .padding(24)
+            
+            // MANUAL INJECTION BUTTON
+            Button(action: { showingAddSheet = true }) {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("New Planned Workout")
+                }
+                .font(.system(size: 14, weight: .black, design: .monospaced))
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(ColorTheme.prime)
+                .foregroundStyle(ColorTheme.background)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 40)
+            .padding(.top, 12)
         }
-        .sheet(isPresented: $showingAddMission) {
+        .applyTacticalOS(title: "Training Plan", showBack: true)
+        .sheet(item: $editingMission) { mission in
+            EditMissionSheet(mission: mission)
+        }
+        .sheet(isPresented: $showingAddSheet) {
             AddPlannedActivitySheet()
         }
     }
     
-    // MARK: - 🧠 HELPERS
-    
-    private func gridFuelColor(for tier: String) -> Color {
-        if tier.contains("LOW") { return .green }
-        if tier.contains("MED") { return .yellow }
-        if tier.contains("HIGH") { return ColorTheme.critical }
-        if tier.contains("RACE") { return .purple }
-        return ColorTheme.textMuted
-    }
-    
-    private func mapToTactical(_ planned: OperationalDirective) -> TacticalMission {
-        let mappedFuel: FuelTier
-        if planned.fuelTier.contains("LOW") { mappedFuel = .low }
-        else if planned.fuelTier.contains("MED") { mappedFuel = .medium }
-        else if planned.fuelTier.contains("HIGH") { mappedFuel = .high }
-        else if planned.fuelTier.contains("RACE") { mappedFuel = .race }
-        else { mappedFuel = .medium }
-        
-        return TacticalMission(
-            dateString: planned.dateString,
-            title: planned.activity.uppercased(),
-            powerTarget: planned.powerTarget.uppercased(),
-            fuel: mappedFuel,
-            coachNotes: planned.coachNotes,
-            isAltered: planned.isAlteredBySystem
-        )
+    // MARK: - ⚙️ LOGIC: PURGE RECORD
+    private func deleteMission(offsets: IndexSet) {
+        for index in offsets {
+            let missionToDelete = upcomingMissions[index]
+            context.delete(missionToDelete)
+        }
+        do {
+            try context.save()
+            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        } catch {
+            print("❌ DELETE FAULT: \(error.localizedDescription)")
+        }
     }
 }
 
-// MARK: - ✨ THE POLISH: ROW COMPONENT
-struct MacroCycleRow: View {
-    let mission: OperationalDirective
-    let isToday: Bool
+// MARK: - 🧱 SUB-COMPONENT: EDIT SHEET (@Bindable)
+struct EditMissionSheet: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     
-    private var fuelColor: Color {
-        if mission.fuelTier.contains("LOW") { return .green }
-        if mission.fuelTier.contains("MED") { return .yellow }
-        if mission.fuelTier.contains("HIGH") { return ColorTheme.critical }
-        if mission.fuelTier.contains("RACE") { return .purple }
-        return ColorTheme.textMuted
+    // ✨ @Bindable directly mutates the database object in real-time
+    @Bindable var mission: OperationalDirective
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Workout Details")) {
+                    // ✨ FIXED: Bound to 'activity' instead of 'title' to match your model
+                    TextField("Activity", text: $mission.activity)
+                        .font(.system(size: 16, weight: .bold, design: .monospaced))
+                    
+                    DatePicker("Date & Time", selection: $mission.date, displayedComponents: [.date])
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                }
+                
+                // Assuming you removed targetLoad from your model entirely. If it exists, uncomment this.
+                /*
+                Section(header: Text("PHYSIOLOGICAL TARGETS")) {
+                    HStack {
+                        Text("TARGET LOAD (TSS)")
+                            .font(.system(size: 12, weight: .bold, design: .monospaced))
+                            .foregroundStyle(ColorTheme.textMuted)
+                        Spacer()
+                        TextField("0", value: $mission.targetLoad, format: .number)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 16, weight: .heavy, design: .rounded))
+                            .foregroundStyle(ColorTheme.prime)
+                    }
+                }
+                */
+                
+                Section(header: Text("Fueling")) {
+                    Picker("Fuel Tier", selection: $mission.fuelTier) {
+                        Text("Low").tag("LOW")
+                        Text("Medium").tag("MED")
+                        Text("High").tag("HIGH")
+                        Text("Race").tag("RACE")
+                    }
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .tint(ColorTheme.prime)
+                }
+            }
+            .applyTacticalOS(title: "Edit Workout", showBack: false)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Save") {
+                        try? context.save()
+                        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                        dismiss()
+                    }
+                    .font(.system(size: 12, weight: .black, design: .monospaced))
+                    .foregroundStyle(ColorTheme.prime)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 🧱 SUB-COMPONENT: DIRECTIVE ROW UI
+struct DirectiveRowCard: View {
+    let directive: OperationalDirective
+    
+    // Determine color based on fuel tier
+    private var tierColor: Color {
+        let tier = directive.fuelTier.uppercased()
+        if tier.contains("HIGH") || tier.contains("RACE") { return ColorTheme.critical }
+        if tier.contains("MED") { return .yellow }
+        return .green
     }
     
     var body: some View {
-        HStack(spacing: 16) {
-            VStack {
-                Text(mission.dateString.prefix(3).uppercased())
-                    .font(.system(size: 10, weight: .black, design: .monospaced))
-                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textMuted)
-                
-                Text(mission.dateString.suffix(2))
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
-                    .foregroundStyle(isToday ? ColorTheme.background : ColorTheme.textPrimary)
-            }
-            .frame(width: 50, height: 50)
-            .background(isToday ? ColorTheme.prime : ColorTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(mission.activity.uppercased())
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(isToday ? ColorTheme.prime : ColorTheme.textPrimary)
-                    .lineLimit(1)
-                
-                HStack(spacing: 8) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "bolt.fill")
-                        Text(mission.powerTarget)
-                    }
-                    .foregroundStyle(.orange)
-                    
-                    Text("•")
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(directive.date.formatted(date: .abbreviated, time: .omitted).uppercased())
+                        .font(.system(size: 10, weight: .black, design: .monospaced))
                         .foregroundStyle(ColorTheme.textMuted)
                     
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                        Text(mission.fuelTier.components(separatedBy: " ").first ?? "")
-                    }
-                    .foregroundStyle(fuelColor)
+                    Text(directive.activity.uppercased())
+                        .font(.system(size: 16, weight: .heavy, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textPrimary)
                 }
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                
+                Spacer()
+                
+                Text(directive.fuelTier.uppercased())
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .padding(.horizontal, 6).padding(.vertical, 4)
+                    .background(tierColor.opacity(0.2))
+                    .foregroundStyle(tierColor)
+                    .clipShape(Capsule())
             }
-            Spacer()
+            
+            // If you want to display duration or another metric, you can add it here.
+            /*
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                Text("\(Int(directive.targetLoad))")
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(ColorTheme.prime)
+                Text(" TARGET TSS")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(ColorTheme.textMuted)
+            }
+            */
         }
-        .padding(12)
+        .padding()
         .background(ColorTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(isToday ? ColorTheme.prime.opacity(0.5) : Color.clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(ColorTheme.surfaceBorder, lineWidth: 1)
         )
     }
 }
