@@ -3,9 +3,6 @@ import SwiftData
 import SwiftUI
 
 // MARK: - 📐 KINETIC SESSION MODEL
-/// The master record for a completed physical mission.
-/// This model captures the intersection of kinetic work (Power/Pace)
-/// and biological cost (Heart Rate/RPE).
 @Model
 final class KineticSession {
     @Attribute(.unique) var id: UUID
@@ -22,9 +19,12 @@ final class KineticSession {
     var avgPower: Double?
     var shoeName: String?
     
-    // MARK: - 🎨 UI COMPUTED PROPERTIES
+    // ✨ NEW: ADVANCED BIOMECHANICS & TERRAIN
+    var groundContactTime: Double? // ms
+    var verticalOscillation: Double? // cm
+    var elevationGain: Double? // meters
     
-    /// Assigns a specific neon accent color based on the discipline.
+    // MARK: - 🎨 UI COMPUTED PROPERTIES
     @Transient var disciplineColor: Color {
         switch discipline {
         case "RUN": return .cyan
@@ -35,7 +35,6 @@ final class KineticSession {
         }
     }
     
-    /// Maps the discipline to the appropriate SF Symbol.
     @Transient var disciplineIcon: String {
         switch discipline {
         case "RUN": return "figure.run"
@@ -57,7 +56,10 @@ final class KineticSession {
         coachNotes: String = "",
         avgCadence: Double? = nil,
         avgPower: Double? = nil,
-        shoeName: String? = nil
+        shoeName: String? = nil,
+        groundContactTime: Double? = nil,
+        verticalOscillation: Double? = nil,
+        elevationGain: Double? = nil
     ) {
         self.id = UUID()
         self.date = date
@@ -70,36 +72,28 @@ final class KineticSession {
         self.avgCadence = avgCadence
         self.avgPower = avgPower
         self.shoeName = shoeName
+        self.groundContactTime = groundContactTime
+        self.verticalOscillation = verticalOscillation
+        self.elevationGain = elevationGain
     }
     
     // MARK: - 🧠 MECHANICAL LOAD CALCULATOR (TSS)
-        @Transient // We compute this on the fly; no need to save it to the database
-        var trainingStressScore: Double {
-            // Assume a baseline Functional Threshold Power (FTP) of 250W for now
-            // You can make this a global user setting later
-            let assumedFTP = 250.0
-            
-            if let power = avgPower, discipline == "SPIN" {
-                // Mechanical Power Method
-                let durationSecs = durationMinutes * 60.0
-                let intensityFactor = power / assumedFTP
-                return (durationSecs * power * intensityFactor) / (assumedFTP * 3600.0) * 100.0
-            } else {
-                // Biological sRPE Fallback Method
-                // Squaring the RPE ensures exponential load (a 9/10 effort is vastly harder than a 4/10)
-                let rpeFactor = pow(Double(rpe) / 10.0, 2)
-                return rpeFactor * durationMinutes * (100.0 / 60.0)
-            }
+    @Transient
+    var trainingStressScore: Double {
+        let assumedFTP = 250.0
+        if let power = avgPower, discipline == "SPIN" {
+            let durationSecs = durationMinutes * 60.0
+            let intensityFactor = power / assumedFTP
+            return (durationSecs * power * intensityFactor) / (assumedFTP * 3600.0) * 100.0
+        } else {
+            let rpeFactor = pow(Double(rpe) / 10.0, 2)
+            return rpeFactor * durationMinutes * (100.0 / 60.0)
         }
+    }
 }
 
-
-
 // MARK: - 🤖 AI COACH TRANSLATION
-/// Extension to handle the high-density data export for LLM analysis.
 extension KineticSession {
-    
-    /// Generates a structured Markdown excerpt designed for Gemini/GPT coaching analysis.
     func generateFullTacticalExcerpt(readiness: Int?) -> String {
         let pace = durationMinutes / (distanceKM > 0 ? distanceKM : 1.0)
         let mins = Int(pace)
@@ -122,6 +116,11 @@ extension KineticSession {
         - AVG POWER: \(avgPower != nil ? "\(Int(avgPower!))W" : "N/A")
         - AVG CADENCE: \(avgCadence != nil ? "\(Int(avgCadence!)) SPM" : "N/A")
         
+        [ADVANCED BIOMECHANICS]
+        - GCT: \(groundContactTime != nil ? "\(Int(groundContactTime!)) ms" : "N/A")
+        - OSCILLATION: \(verticalOscillation != nil ? String(format: "%.1f cm", verticalOscillation!) : "N/A")
+        - ELEVATION GAIN: \(elevationGain != nil ? "\(Int(elevationGain!)) m" : "N/A")
+        
         [STRUCTURAL LOAD]
         - CHASSIS (SHOES): \(shoeName ?? "Not Specified")
         - HEART RATE: \(Int(averageHR)) BPM
@@ -130,7 +129,7 @@ extension KineticSession {
         "\(coachNotes.isEmpty ? "None." : coachNotes)"
         
         ---
-        INSTRUCTION TO AI COACH: Review this \(discipline) data against my morning readiness. Analyze if I over-reached given my recovery state. Evaluate my mechanical efficiency (Power/HR ratio) and check if these shoes are still providing optimal energy return for this pace.
+        INSTRUCTION TO AI COACH: Review this \(discipline) data. Analyze my mechanical efficiency, specifically evaluating the Ground Contact Time and Vertical Oscillation. Are my mechanics breaking down and leaking watts into the pavement, or am I snapping off the ground efficiently?
         """
     }
 }

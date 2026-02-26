@@ -3,58 +3,99 @@ import SwiftData
 
 struct ReadinessEngine {
     
-    /// Computes the ultimate 0-100 Readiness Score by fusing Biological, Mechanical, and Thermodynamic data.
+    /// Computes the ultimate 0-100 Readiness Score tailored for a high-performance athlete.
+    /// Prioritizes Elite HRV (RMSSD) and penalizes generic Apple Health (SDNN) noise.
     static func computeReadiness(
-        todayHRV: Double,
-        todayRHR: Double,
-        todaySleep: Double,
-        yesterdayNetBalance: Double, // ✨ Added Thermodynamic Input
+        todayLog: TelemetryLog, // Pass the whole log to access RMSSD and Elite scores
         history: [TelemetryLog],
         loadProfile: LoadEngine.LoadProfile
     ) -> Double {
         
-        // 1. BIOLOGICAL BASELINES
-        let validHRVs = history.filter { $0.hrv > 0 }.map { $0.hrv }
-        let validRHRs = history.filter { $0.restingHR > 0 }.map { $0.restingHR }
-        let validSleeps = history.filter { $0.sleepDuration > 0 }.map { $0.sleepDuration }
+        // ---------------------------------------------------------
+        // 1. THE "ELITE" MASTER OVERRIDE
+        // ---------------------------------------------------------
+        // If the Commander took a controlled Elite HRV reading today, we trust the biological
+        // readiness from that app above our own internal math.
+        var biologicalScore: Double = 0.0
         
-        let baselineHRV = validHRVs.isEmpty ? todayHRV : validHRVs.reduce(0, +) / Double(validHRVs.count)
-        let baselineRHR = validRHRs.isEmpty ? todayRHR : validRHRs.reduce(0, +) / Double(validRHRs.count)
-        let baselineSleep = validSleeps.isEmpty ? (todaySleep > 0 ? todaySleep : 8.0) : validSleeps.reduce(0, +) / Double(validSleeps.count)
-        
-        // 2. BIOLOGICAL SCORING (60% Weight)
-        let hrvRatio = baselineHRV > 0 ? (todayHRV / baselineHRV) : 1.0
-        let hrvScore = min(100, max(0, hrvRatio * 100))
-        
-        let rhrRatio = todayRHR > 0 ? (baselineRHR / todayRHR) : 1.0
-        let rhrScore = min(100, max(0, rhrRatio * 100))
-        
-        let sleepTarget = max(8.0, baselineSleep)
-        let sleepRatio = todaySleep / sleepTarget
-        let sleepScore = min(100, max(0, sleepRatio * 100))
-        
-        let biologicalScore = (hrvScore * 0.4) + (rhrScore * 0.4) + (sleepScore * 0.2)
-        
-        // 3. MECHANICAL SCORING (40% Weight)
-        let tsb = loadProfile.tsb
-        let mechanicalScore = min(100.0, max(0.0, 100.0 + (tsb * 2.0)))
-        
-        // 4. THE GRAND FUSION
-        var finalScore: Double
-        if loadProfile.ctl == 0 && loadProfile.atl == 0 {
-            finalScore = biologicalScore
+        if let elite = todayLog.eliteReadiness, elite > 0 {
+            // Convert 1-10 to 10-100 scale if necessary, assuming it might be stored as 1-10
+            biologicalScore = elite <= 10 ? Double(elite * 10) : Double(elite)
         } else {
-            finalScore = (biologicalScore * 0.6) + (mechanicalScore * 0.4)
+            
+            // ---------------------------------------------------------
+            // 2. BIOLOGICAL BASELINES (The "Signal vs Noise" Filter)
+            // ---------------------------------------------------------
+            // Extract RMSSD first. If unavailable, fallback to HRV (SDNN) but note it's lower fidelity.
+            let validRMSSDs = history.compactMap { $0.rmssd }.filter { $0 > 0 }
+            
+            // We use today's RMSSD if available, otherwise fallback to the generic HRV
+            let todayRecoveryMetric = todayLog.rmssd ?? todayLog.hrv
+            
+            let baselineMetric: Double
+            if !validRMSSDs.isEmpty {
+                baselineMetric = validRMSSDs.reduce(0, +) / Double(validRMSSDs.count)
+            } else {
+                let validHRVs = history.filter { $0.hrv > 0 }.map { $0.hrv }
+                baselineMetric = validHRVs.isEmpty ? todayRecoveryMetric : validHRVs.reduce(0, +) / Double(validHRVs.count)
+            }
+            
+            let validRHRs = history.filter { $0.restingHR > 0 }.map { $0.restingHR }
+            let baselineRHR = validRHRs.isEmpty ? todayLog.restingHR : validRHRs.reduce(0, +) / Double(validRHRs.count)
+            
+            let validSleeps = history.filter { $0.sleepDuration > 0 }.map { $0.sleepDuration }
+            let baselineSleep = validSleeps.isEmpty ? (todayLog.sleepDuration > 0 ? todayLog.sleepDuration : 8.0) : validSleeps.reduce(0, +) / Double(validSleeps.count)
+            
+            // ---------------------------------------------------------
+            // 3. SURGICAL BIOLOGICAL SCORING
+            // ---------------------------------------------------------
+            
+            // HRV/RMSSD Penalty Curve: Drops below baseline are severely penalized.
+            let hrvRatio = baselineMetric > 0 ? (todayRecoveryMetric / baselineMetric) : 1.0
+            // If ratio is 0.8 (20% drop), math becomes: 100 - ((1.0 - 0.8) * 200) = 60/100
+            let hrvScore = hrvRatio >= 1.0 ? 100.0 : max(0.0, 100.0 - ((1.0 - hrvRatio) * 200.0))
+            
+            // RHR: Invert ratio. Higher RHR means engine is running hot.
+            let rhrRatio = todayLog.restingHR > 0 ? (baselineRHR / todayLog.restingHR) : 1.0
+            let rhrScore = min(100.0, max(0.0, rhrRatio * 100.0))
+            
+            // Sleep
+            let sleepTarget = max(8.0, baselineSleep)
+            let sleepRatio = todayLog.sleepDuration / sleepTarget
+            let sleepScore = min(100.0, max(0.0, sleepRatio * 100.0))
+            
+            // Apply Noise Penalty: If we are forced to use Apple Health SDNN, cap the bio score at 85
+            // to prevent false "Peak" readings from background noise.
+            let rawBioScore = (hrvScore * 0.5) + (rhrScore * 0.3) + (sleepScore * 0.2)
+            biologicalScore = (todayLog.rmssd != nil) ? rawBioScore : min(85.0, rawBioScore)
         }
         
-       
-        // ✨ Thermodynamic Governor based on CLOSED loop (Yesterday)
-                if yesterdayNetBalance < -500 {
-                    finalScore *= 0.85
-                }
-    
+        // ---------------------------------------------------------
+        // 4. MECHANICAL SCORING (The "Taper Window")
+        // ---------------------------------------------------------
+        let tsb = loadProfile.tsb
+        var mechanicalScore: Double = 0.0
         
-        return min(100, max(0, finalScore))
+        if tsb >= -15 && tsb <= 15 {
+            // Race Ready / Taper Sweet Spot
+            mechanicalScore = 100.0
+        } else if tsb > 15 {
+            // Detraining (Losing fitness)
+            mechanicalScore = max(0.0, 100.0 - ((tsb - 15.0) * 2.0))
+        } else {
+            // Heavy Fatigue / Overreaching (TSB < -15)
+            mechanicalScore = max(0.0, 100.0 + (tsb * 2.0)) // tsb is negative here
+        }
+        
+        // ---------------------------------------------------------
+        // 5. THE GRAND FUSION
+        // ---------------------------------------------------------
+        if loadProfile.ctl == 0 && loadProfile.atl == 0 {
+            return biologicalScore
+        }
+        
+        // Elite Biological data heavily dictates readiness. Mechanical is context.
+        return (biologicalScore * 0.7) + (mechanicalScore * 0.3)
     }
     
     /// Evaluates the final readiness score to determine if a CNS Override is required.

@@ -46,6 +46,9 @@
 		426CBFBC2F50505800559E41 /* ChassisCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFBB2F50505500559E41 /* ChassisCommandView.swift */; };
 		426CBFBE2F50552300559E41 /* EnergyBalanceWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */; };
 		426CBFC12F50630700559E41 /* AIBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC02F50630700559E41 /* AIBriefingView.swift */; };
+		426CBFC52F50816F00559E41 /* SessionDetailCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */; };
+		426CBFC92F50818200559E41 /* AddSessionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFC82F50818200559E41 /* AddSessionSheet.swift */; };
+		426CBFCF2F5081B400559E41 /* SessionSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */; };
 		42B884D52F4C941A00A50290 /* DragsterOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D42F4C941A00A50290 /* DragsterOSApp.swift */; };
 		42B884DA2F4C941A00A50290 /* DragsterOS.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 42B884D82F4C941A00A50290 /* DragsterOS.xcdatamodeld */; };
 		42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42B884DB2F4C941A00A50290 /* ContentView.swift */; };
@@ -110,6 +113,9 @@
 		426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyBalanceWidget.swift; sourceTree = "<group>"; };
 		426CBFBF2F50620600559E41 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
 		426CBFC02F50630700559E41 /* AIBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBriefingView.swift; sourceTree = "<group>"; };
+		426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailCanvas.swift; sourceTree = "<group>"; };
+		426CBFC82F50818200559E41 /* AddSessionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionSheet.swift; sourceTree = "<group>"; };
+		426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionSummaryCard.swift; sourceTree = "<group>"; };
 		42B884D12F4C941A00A50290 /* DragsterOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DragsterOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		42B884D42F4C941A00A50290 /* DragsterOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragsterOSApp.swift; sourceTree = "<group>"; };
 		42B884D92F4C941A00A50290 /* DragsterOS.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = DragsterOS.xcdatamodel; sourceTree = "<group>"; };
@@ -149,6 +155,9 @@
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				426CBFCE2F5081B400559E41 /* SessionSummaryCard.swift */,
+				426CBFC82F50818200559E41 /* AddSessionSheet.swift */,
+				426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */,
 				426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */,
 				425C58892F4F799400EFBA4A /* TelemetryChartCard.swift */,
 				425C58872F4F751500EFBA4A /* ReadinessTrendChart.swift */,
@@ -364,6 +373,8 @@
 				42FAD52D2F4EF9450049BFEF /* TelemetryLog.swift in Sources */,
 				4233D3182F4DC9A100B948FA /* MetricSlider.swift in Sources */,
 				42D7085F2F503E3500DC1091 /* HardwareScanSheet.swift in Sources */,
+				426CBFC92F50818200559E41 /* AddSessionSheet.swift in Sources */,
+				426CBFC52F50816F00559E41 /* SessionDetailCanvas.swift in Sources */,
 				42D7085B2F503D8F00DC1091 /* ObjectiveSetupSheet.swift in Sources */,
 				425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */,
 				4233D3012F4DB68400B948FA /* OperationalBriefingView.swift in Sources */,
@@ -371,6 +382,7 @@
 				425C58802F4F713E00EFBA4A /* BiometricMiniCard.swift in Sources */,
 				425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */,
 				425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */,
+				426CBFCF2F5081B400559E41 /* SessionSummaryCard.swift in Sources */,
 				425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */,
 				426CBFBE2F50552300559E41 /* EnergyBalanceWidget.swift in Sources */,
 				425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */,

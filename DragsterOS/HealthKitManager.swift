@@ -13,61 +13,50 @@ final class HealthKitManager {
     private init() {}
     
     // MARK: - 🔐 AUTHORIZATION PROTOCOL
- 
-    
-    
-    // MARK: - 🔐 AUTHORIZATION PROTOCOL
-        func requestAuthorization() async throws {
-            guard HKHealthStore.isHealthDataAvailable() else {
-                throw NSError(domain: "HealthKitManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device."])
-            }
-            
-            // 📥 DATA WE NEED TO READ (Ingestion)
-            let readTypes: Set<HKObjectType> = [
-                // Workouts & Kinematics
-                HKObjectType.workoutType(),
-                HKQuantityType(.heartRate),
-                HKQuantityType(.distanceWalkingRunning),
-                HKQuantityType(.distanceCycling),
-                
-                // ✨ NEW: BIOLOGICAL TELEMETRY
-                HKQuantityType(.heartRateVariabilitySDNN), // Apple's native HRV format
-                HKQuantityType(.restingHeartRate),         // RHR
-                HKCategoryType(.sleepAnalysis),            // Sleep
-                HKQuantityType(.bodyMass),                 // Weight/Mass
-                
-                // ✨ NEW: MECHANICAL TELEMETRY
-                HKQuantityType(.cyclingPower),             // Bike Wattage
-                HKQuantityType(.runningPower),             // Run Wattage (if using Stryd/Apple Watch)
-                HKQuantityType(.cyclingCadence)   ,         // Spin Cadence
-                // Add this to your readTypes matrix
-                HKQuantityType(.stepCount), // Running cadence
-                
-                
-                // ✨ NEW: THERMODYNAMIC LOGISTICS
-                            HKQuantityType(.activeEnergyBurned),       // Movement / Workout Caloric Burn
-                            HKQuantityType(.basalEnergyBurned),        // Resting Metabolic Rate (BMR)
-                            HKQuantityType(.dietaryEnergyConsumed)     // Caloric Intake (Food Logged)
-            ]
-            
-            // 📤 DATA WE NEED TO WRITE (If logging manual directives)
-            let writeTypes: Set<HKSampleType> = [
-                HKObjectType.workoutType(),
-                HKQuantityType(.distanceWalkingRunning),
-                HKQuantityType(.distanceCycling)
-            ]
-            
-            try await healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
+    func requestAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw NSError(domain: "HealthKitManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available."])
         }
+        
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.workoutType(),
+            HKQuantityType(.heartRate),
+            HKQuantityType(.distanceWalkingRunning),
+            HKQuantityType(.distanceCycling),
+            HKQuantityType(.heartRateVariabilitySDNN),
+            HKQuantityType(.restingHeartRate),
+            HKCategoryType(.sleepAnalysis),
+            HKQuantityType(.bodyMass),
+            HKQuantityType(.cyclingPower),
+            HKQuantityType(.runningPower),
+            HKQuantityType(.cyclingCadence),
+            HKQuantityType(.stepCount),
+            HKQuantityType(.activeEnergyBurned),
+            HKQuantityType(.basalEnergyBurned),
+            HKQuantityType(.dietaryEnergyConsumed),
+            
+            // ✨ NEW: BIOMECHANICS AUTHORIZATION
+            HKQuantityType(.runningGroundContactTime),
+            HKQuantityType(.runningVerticalOscillation)
+        ]
+        
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.workoutType(),
+            HKQuantityType(.distanceWalkingRunning),
+            HKQuantityType(.distanceCycling)
+        ]
+        
+        try await healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
+    }
     
-    // MARK: - 🧬 TELEMETRY EXTRACTION (Async Pipeline)
+    // ... KEEP YOUR EXISTING fetchMorningReadiness(), fetchLatestWeight(), fetchLatestWorkout(), fetchHistoricalWorkouts() HERE ...
+    
     func fetchMorningReadiness() async throws -> (hrv: Double, restingHR: Double, sleepHours: Double) {
         async let hrv = fetchLatestHRV()
         async let rhr = fetchLatestRestingHR()
         async let sleep = fetchLastNightSleep()
         return try await (hrv, rhr, sleep)
     }
-    
     private func fetchLatestHRV() async throws -> Double {
         guard let hrvType = HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return 0.0 }
         let predicate = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: .now), end: .now)
@@ -75,7 +64,6 @@ final class HealthKitManager {
         let results = try await descriptor.result(for: healthStore)
         return results.first?.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli)) ?? 0.0
     }
-    
     private func fetchLatestRestingHR() async throws -> Double {
         guard let rhrType = HKObjectType.quantityType(forIdentifier: .restingHeartRate) else { return 0.0 }
         let predicate = HKQuery.predicateForSamples(withStart: Calendar.current.startOfDay(for: .now), end: .now)
@@ -83,14 +71,12 @@ final class HealthKitManager {
         let results = try await descriptor.result(for: healthStore)
         return results.first?.quantity.doubleValue(for: HKUnit.count().unitDivided(by: HKUnit.minute())) ?? 0.0
     }
-    
     private func fetchLastNightSleep() async throws -> Double {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return 0.0 }
         let startDate = Calendar.current.date(byAdding: .day, value: -1, to: .now)!
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: .now)
         let descriptor = HKSampleQueryDescriptor(predicates: [.categorySample(type: sleepType, predicate: predicate)], sortDescriptors: [])
         let results = try await descriptor.result(for: healthStore)
-        
         let asleepSamples = results.filter {
             $0.value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
             $0.value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
@@ -100,14 +86,12 @@ final class HealthKitManager {
         let totalSleepSeconds = asleepSamples.reduce(0.0) { total, sample in total + sample.endDate.timeIntervalSince(sample.startDate) }
         return totalSleepSeconds / 3600.0
     }
-    
     func fetchLatestWeight() async throws -> Double {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return 0.0 }
         let descriptor = HKSampleQueryDescriptor(predicates: [.quantitySample(type: weightType)], sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)], limit: 1)
         let results = try await descriptor.result(for: healthStore)
         return results.first?.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo)) ?? 0.0
     }
-    
     func fetchLatestWorkout() async throws -> HKWorkout? {
         let workoutType = HKObjectType.workoutType()
         let twelveHoursAgo = Calendar.current.date(byAdding: .hour, value: -12, to: .now)!
@@ -116,7 +100,6 @@ final class HealthKitManager {
         let results = try await descriptor.result(for: healthStore)
         return results.first as? HKWorkout
     }
-    
     func fetchHistoricalWorkouts(daysBack: Int = 30) async throws -> [HKWorkout] {
         let workoutType = HKObjectType.workoutType()
         let startDate = Calendar.current.date(byAdding: .day, value: -daysBack, to: .now)!
@@ -125,103 +108,14 @@ final class HealthKitManager {
         let results = try await descriptor.result(for: healthStore)
         return results.compactMap { $0 as? HKWorkout }
     }
-    
-    // MARK: - 📊 HISTORICAL THERMODYNAMICS
-        
-        /// Fetches energy balance data for a rolling window (7, 14, or 30 days).
-        func fetchHistoricalEnergyBalance(daysBack: Int) async -> [(date: Date, intake: Double, burned: Double, net: Double)] {
-            var historicalData: [(date: Date, intake: Double, burned: Double, net: Double)] = []
-            let calendar = Calendar.current
-            let now = Date()
-            
-            // Loop backwards from today
-            for i in 0..<daysBack {
-                guard let date = calendar.date(byAdding: .day, value: -i, to: now) else { continue }
-                let startOfDay = calendar.startOfDay(for: date)
-                let endOfDay = (i == 0) ? now : calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-                
-                let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
-                
-                @Sendable func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
-                    guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
-                    return await withCheckedContinuation { continuation in
-                        let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
-                            let sum = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0.0
-                            continuation.resume(returning: sum)
-                        }
-                        healthStore.execute(query)
-                    }
-                }
-                
-                async let active = fetchSum(for: .activeEnergyBurned)
-                async let basal = fetchSum(for: .basalEnergyBurned)
-                async let dietary = fetchSum(for: .dietaryEnergyConsumed)
-                
-                let (a, b, d) = await (active, basal, dietary)
-                let burned = a + b
-                
-                historicalData.append((date: startOfDay, intake: d, burned: burned, net: d - burned))
-            }
-            
-            return historicalData.sorted { $0.date < $1.date }
-        }
-    
-    // MARK: - 🔋 PREVIOUS DAY FUEL CHECK
-        func fetchYesterdayEnergyBalance() async -> Double {
-            let calendar = Calendar.current
-            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else { return 0 }
-            let data = await fetchEnergyBalance(_for: yesterday) // Ensure your fetchEnergyBalance accepts a date!
-            return data.net
-        }
-    
-    // MARK: - 🔋 THERMODYNAMIC ENGINE
-        
-        /// Calculates the net energy balance (Intake - Total Burn) for the current day.
-    func fetchEnergyBalance(_for: Date = Date()) async -> (intake: Double, burned: Double, net: Double) {
-            let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: _for)
-            
-            // Predicate for "Today"
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: _for, options: .strictStartDate)
-            
-            // Internal helper to sum calories for a specific type
-            @Sendable func fetchSum(for typeIdentifier: HKQuantityTypeIdentifier) async -> Double {
-                guard let type = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0.0 }
-                
-                return await withCheckedContinuation { continuation in
-                    let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, _ in
-                        let sum = result?.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0.0
-                        continuation.resume(returning: sum)
-                    }
-                    healthStore.execute(query)
-                }
-            }
-            
-            // Execute concurrent fetches
-            async let activeBurn = fetchSum(for: .activeEnergyBurned)
-            async let basalBurn = fetchSum(for: .basalEnergyBurned)
-            async let dietaryIntake = fetchSum(for: .dietaryEnergyConsumed)
-            
-            let (active, basal, intake) = await (activeBurn, basalBurn, dietaryIntake)
-            
-            let totalBurned = active + basal
-            let netBalance = intake - totalBurned
-            
-            return (intake: intake, burned: totalBurned, net: netBalance)
-        }
-    
-    
 }
 
 // MARK: - 📈 KINETIC TELEMETRY (SCALARS & VECTORS)
-// ✨ THE MISSING CODE: This handles all the Heart Rate, Power, and Cadence fetching!
 extension HealthKitManager {
-    
-    // --- 1. SCALAR FETCHERS (For the Grid) ---
+    // --- 1. SCALAR FETCHERS ---
     func fetchAverageHR(for workout: HKWorkout) async -> Double {
         guard let hrType = HKObjectType.quantityType(forIdentifier: .heartRate) else { return 0.0 }
         let predicate = HKQuery.predicateForObjects(from: workout)
-        
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsQuery(quantityType: hrType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, _ in
                 let bpmUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
@@ -235,7 +129,6 @@ extension HealthKitManager {
         let typeId: HKQuantityTypeIdentifier = isRide ? .cyclingPower : .runningPower
         guard let qtyType = HKQuantityType.quantityType(forIdentifier: typeId) else { return 0.0 }
         let predicate = HKQuery.predicateForObjects(from: workout)
-        
         return await withCheckedContinuation { continuation in
             let query = HKStatisticsQuery(quantityType: qtyType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, _ in
                 continuation.resume(returning: result?.averageQuantity()?.doubleValue(for: .watt()) ?? 0.0)
@@ -256,7 +149,6 @@ extension HealthKitManager {
                 healthStore.execute(query)
             }
         } else {
-            // Running Cadence (Steps per minute)
             guard let qtyType = HKQuantityType.quantityType(forIdentifier: .stepCount) else { return 0.0 }
             let predicate = HKQuery.predicateForObjects(from: workout)
             return await withCheckedContinuation { continuation in
@@ -269,6 +161,46 @@ extension HealthKitManager {
             }
         }
     }
+    
+    // ✨ NEW: BIOMECHANICS FETCHERS
+    func fetchAverageGCT(for workout: HKWorkout) async -> Double {
+        guard let type = HKObjectType.quantityType(forIdentifier: .runningGroundContactTime) else { return 0.0 }
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, _ in
+                continuation.resume(returning: result?.averageQuantity()?.doubleValue(for: HKUnit.secondUnit(with: .milli)) ?? 0.0)
+            }
+            healthStore.execute(query)
+        }
+    }
+    
+    func fetchAverageOscillation(for workout: HKWorkout) async -> Double {
+        guard let type = HKObjectType.quantityType(forIdentifier: .runningVerticalOscillation) else { return 0.0 }
+        let predicate = HKQuery.predicateForObjects(from: workout)
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(quantityType: type, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, _ in
+                continuation.resume(returning: result?.averageQuantity()?.doubleValue(for: HKUnit.meterUnit(with: .centi)) ?? 0.0)
+            }
+            healthStore.execute(query)
+        }
+    }
+    
+    func fetchElevation(for workout: HKWorkout) -> Double {
+        if let elevation = workout.metadata?[HKMetadataKeyElevationAscended] as? HKQuantity {
+            return elevation.doubleValue(for: .meter())
+        }
+        return 0.0
+    }
+    
+    
+    
+    // ... KEEP YOUR EXISTING VECTOR FETCHERS (fetchTimeSeriesData, fetchHRSeries, etc) AND HISTORICAL/SYNC LOGIC ...
+}
+// MARK: - 📈 KINETIC TELEMETRY (SCALARS & VECTORS)
+// ✨ THE MISSING CODE: This handles all the Heart Rate, Power, and Cadence fetching!
+extension HealthKitManager {
+    
+  
     
     // --- 2. VECTOR FETCHERS (For the Charts) ---
     private func fetchTimeSeriesData(identifier: HKQuantityTypeIdentifier, unit: HKUnit, start: Date, durationMinutes: Double) async -> [(date: Date, value: Double)] {
@@ -499,4 +431,3 @@ extension HealthKitManager {
             }
         }
 }
-

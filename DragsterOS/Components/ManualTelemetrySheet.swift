@@ -103,57 +103,67 @@ struct ManualTelemetrySheet: View {
                     manualRHR = current.restingHR
                     manualSleep = current.sleepDuration
                     manualWeight = current.weightKG
+                    
+                    // Load existing Elite Data back into the UI
+                    rmssd = current.rmssd ?? 0.0
+                    eliteScore = current.eliteReadiness ?? 0
                 }
             }
         }
     }
     
     private func saveManualData() {
+        // ✨ CALCULATE CURRENT LOAD PROFILE FOR THE ENGINE
         let currentLoad = LoadEngine.computeCurrentLoad(history: sessions)
         
-        Task {
-            // ✨ FETCH YESTERDAY'S FUEL (Stabilization Logic)
-            let yesterdayNet = await HealthKitManager.shared.fetchYesterdayEnergyBalance()
+        if let current = log {
+            // Standard Vitals
+            current.hrv = manualHRV
+            current.restingHR = manualRHR
+            current.sleepDuration = manualSleep
+            current.weightKG = manualWeight
             
-            await MainActor.run {
-                if let current = log {
-                    current.hrv = manualHRV
-                    current.restingHR = manualRHR
-                    current.sleepDuration = manualSleep
-                    current.weightKG = manualWeight
-                    
-                    // ✨ CORRECTED: Label changed to yesterdayNetBalance
-                    current.readinessScore = ReadinessEngine.computeReadiness(
-                        todayHRV: manualHRV,
-                        todayRHR: manualRHR,
-                        todaySleep: manualSleep,
-                        yesterdayNetBalance: yesterdayNet,
-                        history: history,
-                        loadProfile: currentLoad
-                    )
-                } else {
-                    let newLog = TelemetryLog(
-                        date: Calendar.current.startOfDay(for: .now),
-                        hrv: manualHRV,
-                        restingHR: manualRHR,
-                        sleepDuration: manualSleep,
-                        weightKG: manualWeight,
-                        readinessScore: ReadinessEngine.computeReadiness(
-                            todayHRV: manualHRV,
-                            todayRHR: manualRHR,
-                            todaySleep: manualSleep,
-                            yesterdayNetBalance: yesterdayNet,
-                            history: history,
-                            loadProfile: currentLoad
-                        )
-                    )
-                    context.insert(newLog)
-                }
-                
-                try? context.save()
-                UINotificationFeedbackGenerator().notificationOccurred(.success)
-                dismiss()
-            }
+            // ✨ THE FIX: Inject the Elite HRV Protocol Data
+            current.rmssd = rmssd > 0 ? rmssd : nil
+            current.eliteReadiness = eliteScore > 0 ? eliteScore : nil
+            
+            // Re-run the engine using the updated log
+            current.readinessScore = ReadinessEngine.computeReadiness(
+                todayLog: current,
+                history: history,
+                loadProfile: currentLoad
+            )
+            
+        } else {
+            // Creating a brand new log for today
+            let newLog = TelemetryLog(
+                date: Calendar.current.startOfDay(for: .now),
+                hrv: manualHRV,
+                restingHR: manualRHR,
+                sleepDuration: manualSleep,
+                weightKG: manualWeight, readinessScore: 0
+            )
+            
+            // ✨ THE FIX: Inject Elite Data into new log
+            newLog.rmssd = rmssd > 0 ? rmssd : nil
+            newLog.eliteReadiness = eliteScore > 0 ? eliteScore : nil
+            
+            // Run engine
+            newLog.readinessScore = ReadinessEngine.computeReadiness(
+                todayLog: newLog,
+                history: history,
+                loadProfile: currentLoad
+            )
+            
+            context.insert(newLog)
+        }
+        
+        do {
+            try context.save()
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            dismiss()
+        } catch {
+            print("CRITICAL FAULT: Failed to save telemetry to SwiftData. \(error)")
         }
     }
 }

@@ -139,7 +139,7 @@ struct AIBriefingView: View {
         }
         .applyTacticalOS(title: "AI BRIEFING", showBack: true)
         .task {
-            let fuel = await healthManager.fetchYesterdayEnergyBalance()
+            let fuel = await healthManager.fetchYesterdayEnergyBalance
             await MainActor.run {
                 self.yesterdayNet = fuel
                 self.isCompiling = false

@@ -24,7 +24,8 @@ struct DashboardView: View {
                     date: .now,
                     hrv: metrics.hrv,
                     restingHR: metrics.restingHR,
-                    sleepDuration: metrics.sleepHours
+                    sleepDuration: metrics.sleepHours,
+                    weightKG: 0.0, readinessScore: 0.0
                 )
                 
                 context.insert(todaysLog)

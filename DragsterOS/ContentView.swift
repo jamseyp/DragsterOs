@@ -127,6 +127,7 @@ struct ContentView: View {
     }
     
     // MARK: - ⚙️ LOGIC: BOOT SEQUENCE
+    
     private func bootSystem() async {
         isSyncing = true
         defer { isSyncing = false }
@@ -146,30 +147,32 @@ struct ContentView: View {
                 }
             }
             
-            // ✨ THE THERMODYNAMIC FETCH
-            // We fetch YESTERDAY for the readiness score, and TODAY for the widget.
-            let yesterdayNet = await healthManager.fetchYesterdayEnergyBalance()
-            
             // 2. Calculate Current Mechanical Load Profile
             let currentLoadProfile = LoadEngine.computeCurrentLoad(history: sessions)
             
-            // 3. HISTORICAL BACKFILL (Uses 0 as default fuel for history)
+            // 3. HISTORICAL BACKFILL
             if logs.count < 2 {
-                let historyData = await healthManager.fetchHistoricalBiometrics(daysBack: 30)
+                let historyData = await $healthManager.fetchHistoricalBiometrics(daysBack: 60)
                 let sortedData = historyData.sorted { $0.date < $1.date }
                 
                 await MainActor.run {
                     var rollingHistory: [TelemetryLog] = []
                     for bio in sortedData {
-                        let score = ReadinessEngine.computeReadiness(
-                            todayHRV: bio.hrv,
-                            todayRHR: bio.restingHR,
-                            todaySleep: bio.sleepHours,
-                            yesterdayNetBalance: 0, // Assume neutral for backfill
+                        // ✨ Create log object first
+                        let newLog = TelemetryLog(
+                            date: bio.date,
+                            hrv: bio.hrv,
+                            restingHR: bio.restingHR,
+                            sleepDuration: bio.sleepHours,
+                            weightKG: 0.0,
+                            readinessScore: 0.0
+                        )
+                        // ✨ Pass log object to engine
+                        newLog.readinessScore = ReadinessEngine.computeReadiness(
+                            todayLog: newLog,
                             history: rollingHistory,
                             loadProfile: LoadEngine.LoadProfile(ctl: 0, atl: 0)
                         )
-                        let newLog = TelemetryLog(date: bio.date, hrv: bio.hrv, restingHR: bio.restingHR, sleepDuration: bio.sleepHours, weightKG: 0.0, readinessScore: score)
                         context.insert(newLog)
                         rollingHistory.insert(newLog, at: 0)
                     }
@@ -184,48 +187,47 @@ struct ContentView: View {
             let descriptor = FetchDescriptor<TelemetryLog>(sortBy: [SortDescriptor(\.date, order: .reverse)])
             let updatedLogs = (try? context.fetch(descriptor)) ?? logs
             
-            // ✨ THE FUSION CALCULATION: Fusing Biology with Mechanical TSB + Yesterday's Fuel
-            let calculatedScore = ReadinessEngine.computeReadiness(
-                todayHRV: metrics.hrv,
-                todayRHR: metrics.restingHR,
-                todaySleep: metrics.sleepHours,
-                yesterdayNetBalance: yesterdayNet, // ✨ CORRECTED: Using yesterday's data
-                history: updatedLogs,
-                loadProfile: currentLoadProfile
-            )
-            
             // 5. PERSIST TODAY'S LOG
             await MainActor.run {
+                let currentReadiness: Double
+                
                 if let existingLog = todayLog {
-                    if metrics.hrv > 0 { existingLog.hrv = metrics.hrv }
+                    // ✨ THE ELITE SHIELD: Only update Apple Health HRV if RMSSD is blank
+                    if metrics.hrv > 0 && existingLog.rmssd == nil { existingLog.hrv = metrics.hrv }
                     if metrics.restingHR > 0 { existingLog.restingHR = metrics.restingHR }
                     if metrics.sleepHours > 0 { existingLog.sleepDuration = metrics.sleepHours }
                     if latestWeight > 0 { existingLog.weightKG = latestWeight }
                     
                     existingLog.readinessScore = ReadinessEngine.computeReadiness(
-                        todayHRV: existingLog.hrv,
-                        todayRHR: existingLog.restingHR,
-                        todaySleep: existingLog.sleepDuration,
-                        yesterdayNetBalance: yesterdayNet, // ✨ FIXED ARGUMENT NAME
+                        todayLog: existingLog,
                         history: updatedLogs,
                         loadProfile: currentLoadProfile
                     )
+                    currentReadiness = existingLog.readinessScore
                 } else {
                     let newLog = TelemetryLog(
-                        date: .now,
+                        date: Calendar.current.startOfDay(for: .now),
                         hrv: metrics.hrv,
                         restingHR: metrics.restingHR,
                         sleepDuration: metrics.sleepHours,
                         weightKG: latestWeight,
-                        readinessScore: calculatedScore
+                        readinessScore: 0.0
                     )
+                    
+                    newLog.readinessScore = ReadinessEngine.computeReadiness(
+                        todayLog: newLog,
+                        history: updatedLogs,
+                        loadProfile: currentLoadProfile
+                    )
+                    
                     context.insert(newLog)
+                    currentReadiness = newLog.readinessScore
                 }
                 try? context.save()
+                
+                alertManager.evaluatePhysiologicalLoad(currentReadiness: currentReadiness)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
             }
-            
-            alertManager.evaluatePhysiologicalLoad(currentReadiness: calculatedScore)
-            await MainActor.run { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
             
         } catch {
             print("❌ Boot Fault: \(error.localizedDescription)")
