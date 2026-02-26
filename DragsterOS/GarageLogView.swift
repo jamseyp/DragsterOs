@@ -74,85 +74,99 @@ struct GarageLogView: View {
     
     // MARK: - 🧠 LOGIC: HISTORICAL SYNC (SCALARS)
     private func ingestHistoricalData() async {
-        isSyncingHistory = true
-        
-        do {
-            let historicalWorkouts = try await healthManager.fetchHistoricalWorkouts(daysBack: 30)
-            var newSessions: [KineticSession] = []
+            isSyncingHistory = true
             
-            for workout in historicalWorkouts {
-                // Anti-cloning logic
-                let alreadyExists = sessions.contains {
-                    abs($0.date.timeIntervalSince(workout.startDate)) < 60
+            do {
+                let historicalWorkouts = try await healthManager.fetchHistoricalWorkouts(daysBack: 30)
+                
+                // ✨ 1. Fetch all planned missions into memory first (for speed)
+                let planDescriptor = FetchDescriptor<OperationalDirective>()
+                let allMissions = (try? context.fetch(planDescriptor)) ?? []
+                
+                var newSessions: [KineticSession] = []
+                
+                for workout in historicalWorkouts {
+                    // Anti-cloning logic
+                    let alreadyExists = sessions.contains {
+                        abs($0.date.timeIntervalSince(workout.startDate)) < 60
+                    }
+                    
+                    if !alreadyExists {
+                        let duration = workout.duration / 60.0
+                        var distance = 0.0
+                        if let dist = workout.totalDistance?.doubleValue(for: .meter()) {
+                            distance = dist / 1000.0
+                        }
+                        
+                        var discipline = "OTHER"
+                        switch workout.workoutActivityType {
+                        case .running: discipline = "RUN"
+                        case .cycling: discipline = "SPIN"
+                        case .rowing: discipline = "ROW"
+                        case .traditionalStrengthTraining, .functionalStrengthTraining: discipline = "STRENGTH"
+                        default: continue
+                        }
+                        
+                        let isRide = (discipline == "SPIN")
+                        
+                        // ✨ 2. THE MATCHMAKER: Find the mission assigned for this exact day
+                        let workoutDay = Calendar.current.startOfDay(for: workout.startDate)
+                        let matchedMission = allMissions.first {
+                            Calendar.current.startOfDay(for: $0.date) == workoutDay
+                        }
+                        
+                        // ✨ FETCH ALL SCALARS IN PARALLEL (Including new Biomechanics)
+                        async let hrTask = healthManager.fetchAverageHR(for: workout)
+                        async let pwrTask = healthManager.fetchAveragePower(for: workout, isRide: isRide)
+                        async let cadTask = healthManager.fetchAverageCadence(for: workout, isRide: isRide)
+                        async let gctTask = healthManager.fetchAverageGCT(for: workout)
+                        async let oscTask = healthManager.fetchAverageOscillation(for: workout)
+                        let elevResult = healthManager.fetchElevation(for: workout)
+                        
+                        let (trueAvgHR, trueAvgPower, trueAvgCadence, trueGCT, trueOsc) = await (hrTask, pwrTask, cadTask, gctTask, oscTask)
+                        
+                        let importedSession = KineticSession(
+                            date: workout.startDate,
+                            discipline: discipline,
+                            durationMinutes: duration,
+                            distanceKM: distance,
+                            averageHR: trueAvgHR,
+                            rpe: 5, // Subjective, defaults to 5
+                            coachNotes: "System Import: Apple Health",
+                            avgCadence: trueAvgCadence > 0 ? trueAvgCadence : nil,
+                            avgPower: trueAvgPower > 0 ? trueAvgPower : nil,
+                            shoeName: nil, // Retained as requested/from previous model
+                            groundContactTime: trueGCT > 0 ? trueGCT : nil,
+                            verticalOscillation: trueOsc > 0 ? trueOsc : nil,
+                            elevationGain: elevResult > 0 ? elevResult : nil,
+                            
+                            // ✨ 3. SECURE THE LINK: Attach the UUID to the session
+                            linkedDirectiveID: matchedMission?.id
+                        )
+                        
+                        newSessions.append(importedSession)
+                    }
                 }
                 
-                if !alreadyExists {
-                    let duration = workout.duration / 60.0
-                    var distance = 0.0
-                    if let dist = workout.totalDistance?.doubleValue(for: .meter()) {
-                        distance = dist / 1000.0
+                // Push UI updates back to the Main Actor
+                await MainActor.run {
+                    if !newSessions.isEmpty {
+                        for session in newSessions {
+                            context.insert(session)
+                        }
+                        try? context.save()
+                        UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    } else {
+                        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
                     }
-                    
-                    var discipline = "OTHER"
-                    switch workout.workoutActivityType {
-                    case .running: discipline = "RUN"
-                    case .cycling: discipline = "SPIN"
-                    case .rowing: discipline = "ROW"
-                    case .traditionalStrengthTraining, .functionalStrengthTraining: discipline = "STRENGTH"
-                    default: continue
-                    }
-                    
-                    let isRide = (discipline == "SPIN")
-                    
-                    // ✨ FETCH ALL SCALARS IN PARALLEL (Including new Biomechanics)
-                    async let hrTask = healthManager.fetchAverageHR(for: workout)
-                    async let pwrTask = healthManager.fetchAveragePower(for: workout, isRide: isRide)
-                    async let cadTask = healthManager.fetchAverageCadence(for: workout, isRide: isRide)
-                    async let gctTask = healthManager.fetchAverageGCT(for: workout)
-                    async let oscTask = healthManager.fetchAverageOscillation(for: workout)
-                    let elevResult = healthManager.fetchElevation(for: workout)
-                    
-                    let (trueAvgHR, trueAvgPower, trueAvgCadence, trueGCT, trueOsc) = await (hrTask, pwrTask, cadTask, gctTask, oscTask)
-                    
-                    let importedSession = KineticSession(
-                        date: workout.startDate,
-                        discipline: discipline,
-                        durationMinutes: duration,
-                        distanceKM: distance,
-                        averageHR: trueAvgHR,
-                        rpe: 5, // Subjective, defaults to 5
-                        coachNotes: "System Import: Apple Health",
-                        avgCadence: trueAvgCadence > 0 ? trueAvgCadence : nil,
-                        avgPower: trueAvgPower > 0 ? trueAvgPower : nil,
-                        shoeName: nil,
-                        groundContactTime: trueGCT > 0 ? trueGCT : nil,
-                        verticalOscillation: trueOsc > 0 ? trueOsc : nil,
-                        elevationGain: elevResult > 0 ? elevResult : nil
-                    )
-                    
-                    newSessions.append(importedSession)
                 }
+                
+            } catch {
+                print("❌ Sync Fault: \(error)")
             }
             
-            // Push UI updates back to the Main Actor
-            await MainActor.run {
-                if !newSessions.isEmpty {
-                    for session in newSessions {
-                        context.insert(session)
-                    }
-                    try? context.save()
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                } else {
-                    UIImpactFeedbackGenerator(style: .soft).impactOccurred()
-                }
-            }
-            
-        } catch {
-            print("❌ Sync Fault: \(error)")
+            await MainActor.run { isSyncingHistory = false }
         }
-        
-        await MainActor.run { isSyncingHistory = false }
-    }
 }
 
 
