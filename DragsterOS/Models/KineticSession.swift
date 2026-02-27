@@ -27,6 +27,9 @@ final class KineticSession {
     // ✨ THE MISSING LINK TO THE TRAINING PLAN
     var linkedDirectiveID: UUID?
     
+    // Add this to your KineticSession class properties
+    var isSyncedToEquipment: Bool = false
+    
     // MARK: - 🎨 UI COMPUTED PROPERTIES
     @Transient var disciplineColor: Color {
         switch discipline {

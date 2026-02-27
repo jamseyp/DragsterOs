@@ -1,13 +1,14 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 🗺️ OPERATIONAL LOGBOOK
+// MARK: - 🗺️ OPERATIONAL LOGBOOK (V1.2)
+/// A grouped, filterable timeline of all historical kinetic sessions.
 struct GarageLogView: View {
     
     // MARK: - 🗄️ PERSISTENCE
     @Environment(\.modelContext) private var context
     
-    /// Reactive query for all completed sessions, ordered by most recent first.
+    // Pull all sessions, strictly ordered by newest first
     @Query(sort: \KineticSession.date, order: .reverse) private var sessions: [KineticSession]
     
     // MARK: - 🕹️ STATE MANAGEMENT
@@ -16,54 +17,139 @@ struct GarageLogView: View {
     @State private var healthManager = HealthKitManager.shared
     @State private var isSyncingHistory = false
     
+    // NEW: Filter State
+    @State private var selectedFilter: String = "ALL"
+    let filterOptions = ["ALL", "RUN", "SPIN", "STRENGTH"]
+    
+    // MARK: - 🧠 COMPUTED DATA
+    /// Filters the main array based on the selected discipline
+    private var filteredSessions: [KineticSession] {
+        if selectedFilter == "ALL" { return sessions }
+        return sessions.filter { $0.discipline == selectedFilter }
+    }
+    
+    /// Groups the filtered sessions into chronological buckets (Month & Year)
+    private var groupedSessions: [(month: String, sessions: [KineticSession])] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy" // e.g., "April 2026"
+        
+        let grouped = Dictionary(grouping: filteredSessions) { session in
+            formatter.string(from: session.date)
+        }
+        
+        // Return as an array of tuples, sorted chronologically descending
+        return grouped.map { (month: $0.key, sessions: $0.value.sorted(by: { $0.date > $1.date })) }
+            .sorted { $0.sessions.first?.date ?? .distantPast > $1.sessions.first?.date ?? .distantPast }
+    }
+    
+    /// Calculates the total volume (KM for cardio, Hours for strength) of the currently filtered view
+    private var aggregateVolumeText: String {
+        if filteredSessions.isEmpty { return "0" }
+        
+        if selectedFilter == "RUN" || selectedFilter == "SPIN" {
+            let totalKM = filteredSessions.reduce(0) { $0 + $1.distanceKM }
+            return "\(Int(totalKM)) KM TOTAL"
+        } else {
+            let totalMinutes = filteredSessions.reduce(0) { $0 + $1.durationMinutes }
+            return "\(Int(totalMinutes / 60)) HOURS TOTAL"
+        }
+    }
+    
     // MARK: - 🖼️ UI BODY
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 24) {
+        VStack(spacing: 0) {
+            
+            // ---------------------------------------------------------
+            // 1. FILTER TERMINAL
+            // ---------------------------------------------------------
+            VStack(spacing: 12) {
+                HStack {
+                    Text("TIMELINE FILTER")
+                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textMuted)
+                    Spacer()
+                    Text(aggregateVolumeText)
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(ColorTheme.prime)
+                }
                 
-                // MARK: 📜 TIMELINE
-                if sessions.isEmpty {
-                    ContentUnavailableView(
-                        "NO DIRECTIVES ANALYZED",
-                        systemImage: "bolt.slash.fill",
-                        description: Text("Ingest HealthKit data or log a manual entry.")
-                    )
-                    .foregroundStyle(ColorTheme.prime)
-                    .padding(.top, 100)
-                } else {
-                    // ✨ REVERTED: Back to high-performance LazyVStack
-                    LazyVStack(spacing: 16) {
-                        ForEach(sessions) { session in
-                            NavigationLink(destination: SessionDetailCanvas(session: session)) {
-                                SessionSummaryCard(session: session)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-                            // ✨ NEW: Context Menu for Edit/Delete (Fixes the Navigation Bug)
-                            .contextMenu {
-                                Button(action: {
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                    editingSession = session
-                                }) {
-                                    Label("OVERRIDE METRICS", systemImage: "slider.horizontal.3")
+                Picker("Discipline Filter", selection: $selectedFilter) {
+                    ForEach(filterOptions, id: \.self) { option in
+                        Text(option).tag(option)
+                    }
+                }
+                .pickerStyle(.segmented)
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+            
+            Divider().background(ColorTheme.surfaceBorder)
+            
+            // ---------------------------------------------------------
+            // 2. TIMELINE DATASTREAM
+            // ---------------------------------------------------------
+            if filteredSessions.isEmpty {
+                ContentUnavailableView(
+                    "NO LOGS FOUND",
+                    systemImage: "bolt.slash.fill",
+                    description: Text(selectedFilter == "ALL" ? "Ingest HealthKit data or log a manual entry." : "No sessions found for \(selectedFilter).")
+                )
+                .foregroundStyle(ColorTheme.prime)
+                .frame(maxHeight: .infinity)
+            } else {
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 24, pinnedViews: [.sectionHeaders]) {
+                        
+                        ForEach(groupedSessions, id: \.month) { group in
+                            Section {
+                                ForEach(group.sessions) { session in
+                                    NavigationLink(destination: SessionDetailCanvas(session: session)) {
+                                        SessionSummaryCard(session: session)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                    .contextMenu {
+                                        Button(action: {
+                                            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                            editingSession = session
+                                        }) {
+                                            Label("OVERRIDE METRICS", systemImage: "slider.horizontal.3")
+                                        }
+                                        
+                                        Button(role: .destructive, action: { deleteSingleSession(session) }) {
+                                            Label("PURGE RECORD", systemImage: "trash")
+                                        }
+                                    }
                                 }
-                                
-                                Button(role: .destructive, action: {
-                                    deleteSingleSession(session)
-                                }) {
-                                    Label("PURGE RECORD", systemImage: "trash")
+                            } header: {
+                                // Sticky Header for the Month
+                                HStack {
+                                    Text(group.month.uppercased())
+                                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                                        .foregroundStyle(ColorTheme.textMuted)
+                                        .padding(.vertical, 8)
+                                        .padding(.horizontal, 16)
+                                        .background(ColorTheme.background.opacity(0.95))
+                                        .clipShape(Capsule())
+                                    Spacer()
                                 }
+                                .padding(.top, 8)
+                                .padding(.bottom, 4)
+                                // Prevent the background from showing underneath the sticky header
+                                .background(ColorTheme.background)
                             }
                         }
                     }
                     .padding(.horizontal)
+                    .padding(.bottom, 120) // Padding for floating buttons
                 }
             }
-            .padding(.vertical, 20)
-            .padding(.bottom, 100) // Padding for floating buttons
         }
-        .applyTacticalOS(title: "KINETIC LOGBOOK", showBack: true)
+        .applyTacticalOS(title: "KINETIC LOGBOOK", showBack: false) // Assuming this is now a root tab
         
-        // ✨ FLOATING TACTICAL OVERLAYS
+        // ---------------------------------------------------------
+        // 3. FLOATING ACTION BUTTONS
+        // ---------------------------------------------------------
         .overlay(alignment: .bottomTrailing) {
             TacticalActionButton(icon: "plus", color: ColorTheme.prime) {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -79,15 +165,20 @@ struct GarageLogView: View {
             .opacity(isSyncingHistory ? 0.5 : 1.0)
             .disabled(isSyncingHistory)
         }
+        
+        // ---------------------------------------------------------
+        // 4. ROUTING MODULES
+        // ---------------------------------------------------------
         .sheet(isPresented: $showingAddSession) {
-            Text("ADD SESSION SHEET GOES HERE").presentationDetents([.medium])
+            AddSessionSheet() // ✨ Connected to the new sheet we built
+                .presentationDetents([.large])
         }
         .sheet(item: $editingSession) { session in
             EditSessionSheet(session: session)
         }
     }
     
-    // MARK: - ⚙️ LOGIC: PURGE RECORD (Context Menu Version)
+    // MARK: - ⚙️ LOGIC: PURGE RECORD
     private func deleteSingleSession(_ session: KineticSession) {
         context.delete(session)
         do {
@@ -193,11 +284,13 @@ struct GarageLogView: View {
         await MainActor.run { isSyncingHistory = false }
     }
 }
-
 // MARK: - 🧱 SUB-COMPONENT: EDIT SHEET (@Bindable)
 struct EditSessionSheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    
+    // ✨ FIXED: Sorting by .model instead of .name to match your actual schema
+    @Query(sort: \RunningShoe.model) private var availableShoes: [RunningShoe]
     
     @Bindable var session: KineticSession
     
@@ -225,17 +318,29 @@ struct EditSessionSheet: View {
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                 }
                 
+                // ✨ FIXED: Accessing .model instead of .name
                 Section(header: Text("CHASSIS DEPLOYMENT")) {
-                    TextField("Shoe Name", text: Binding(
-                        get: { session.shoeName ?? "" },
-                        set: { session.shoeName = $0 }
-                    ))
+                    Picker("Select Chassis", selection: $session.shoeName) {
+                        Text("NONE DEPLOYED").tag(String?.none)
+                        
+                        ForEach(availableShoes) { shoe in
+                            // Displaying Brand + Model for clarity
+                            Text("\(shoe.brand) \(shoe.model)")
+                                .tag(shoe.model as String?) // We save the model string to the session
+                        }
+                    }
+                    .pickerStyle(.menu)
                     .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .tint(ColorTheme.prime)
                 }
             }
             .applyTacticalOS(title: "OVERRIDE SESSION DATA", showBack: false)
-            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("ABORT") { dismiss() }
+                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                        .foregroundStyle(ColorTheme.critical)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("COMMIT") {
                         try? context.save()

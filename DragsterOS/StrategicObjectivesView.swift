@@ -90,10 +90,11 @@ struct StrategicObjectivesView: View {
         .applyTacticalOS(title: "PRIMARY OBJECTIVES", showBack: true)
         .sheet(item: $editingObjective) { objective in
             EditObjectiveSheet(objective: objective)
+                .presentationDetents([.large])
         }
         .sheet(isPresented: $showingAddSheet) {
-            Text("ADD OBJECTIVE SHEET GOES HERE").presentationDetents([.medium])
             ObjectiveSetupSheet()
+                .presentationDetents([.large])
         }
     }
     

@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 // MARK: - 🗺️ THE MACRO-CYCLE MODEL
-/// Represents a single prescribed day in the 10-week Half-Marathon block.
+/// Represents a single prescribed day in the macro-cycle block.
 @Model
 final class PlannedMission {
     @Attribute(.unique) var id: UUID
@@ -14,35 +14,49 @@ final class PlannedMission {
     var strength: String
     var fuelTier: String
     var coachNotes: String
+    var targetLoad: Double
     
-    // Tactical State (We will use these later!)
+    // Tactical State
     var isCompleted: Bool
     var isAlteredBySystem: Bool // True if low readiness caused a downgrade
     
+    // ✨ UPDATED: Added default values so manual UI injection doesn't crash the compiler
     init(
-        week: Int,
-        dateString: String,
-        date: Date,
-        activity: String,
-        powerTarget: String,
-        strength: String,
-        energyProtocol: String,
-        commandersIntent: String,
+        week: Int = 0,
+        dateString: String = "",
+        date: Date = .now,
+        activity: String = "UNASSIGNED",
+        powerTarget: String = "",
+        strength: String = "",
+        fuelTier: String = "LOW",
+        coachNotes: String = "",
+        targetLoad: Double = 0.0,
         isCompleted: Bool = false,
         isAlteredBySystem: Bool = false
     ) {
         self.id = UUID()
         self.week = week
-        self.dateString = dateString
+        
+        // ✨ LOGIC: If a manual mission is injected, auto-generate the CSV-style dateString
+        if dateString.isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM-dd"
+            self.dateString = formatter.string(from: date)
+        } else {
+            self.dateString = dateString
+        }
+        
         self.date = date
         self.activity = activity
         self.powerTarget = powerTarget
         self.strength = strength
-        self.fuelTier = energyProtocol
-        self.coachNotes = commandersIntent
+        self.fuelTier = fuelTier
+        self.coachNotes = coachNotes
+        self.targetLoad = targetLoad
         self.isCompleted = isCompleted
         self.isAlteredBySystem = isAlteredBySystem
     }
 }
 
+// Seamless alias so the rest of the OS continues to function without refactoring
 typealias OperationalDirective = PlannedMission

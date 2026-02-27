@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -121,7 +121,6 @@
 		425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPlannedActivitySheet.swift; sourceTree = "<group>"; };
 		426CBFBB2F50505500559E41 /* ChassisCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChassisCommandView.swift; sourceTree = "<group>"; };
 		426CBFBD2F50552000559E41 /* EnergyBalanceWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnergyBalanceWidget.swift; sourceTree = "<group>"; };
-		426CBFBF2F50620600559E41 /* Untitled.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Untitled.swift; sourceTree = "<group>"; };
 		426CBFC02F50630700559E41 /* AIBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBriefingView.swift; sourceTree = "<group>"; };
 		426CBFC42F50816F00559E41 /* SessionDetailCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailCanvas.swift; sourceTree = "<group>"; };
 		426CBFC82F50818200559E41 /* AddSessionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSessionSheet.swift; sourceTree = "<group>"; };
@@ -152,6 +151,10 @@
 		42FAD52E2F4EFAE80049BFEF /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		42FAD5302F4EFD6F0049BFEF /* RunningShoe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunningShoe.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		42169D202F522DDC00312CFD /* Views */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Views; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		42B884CE2F4C941A00A50290 /* Frameworks */ = {
@@ -237,11 +240,11 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				42169D202F522DDC00312CFD /* Views */,
 				42A738012F51E59300BAFC2A /* StrategicObjectivesView.swift */,
 				421567DB2F51E10D001D54A9 /* AddShoeSheet.swift */,
 				421567D52F51CA40001D54A9 /* MacroTarget.swift */,
 				426CBFC02F50630700559E41 /* AIBriefingView.swift */,
-				426CBFBF2F50620600559E41 /* Untitled.swift */,
 				426CBFBB2F50505500559E41 /* ChassisCommandView.swift */,
 				42D708622F5046D700DC1091 /* LoadEngine.swift */,
 				42D708602F50441700DC1091 /* MassEfficiencyView.swift */,
@@ -304,6 +307,9 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				42169D202F522DDC00312CFD /* Views */,
 			);
 			name = DragsterOS;
 			productName = DragsterOS;

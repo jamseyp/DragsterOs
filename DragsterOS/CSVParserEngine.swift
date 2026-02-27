@@ -5,10 +5,10 @@ import SwiftData
 struct CSVParserEngine {
     
     static func generateMacroCycle() -> [PlannedMission] {
-        // 1. CHECK IF FILE EXISTS
+        // 1. SYSTEM CHECK: VERIFY FILE BUNDLE
         guard let filepath = Bundle.main.path(forResource: "hmPlan", ofType: "csv") else {
             print("🚨 FATAL ERROR: 'hmPlan.csv' was not found in the App Bundle!")
-            print("👉 FIX: Click hmPlan.csv in Xcode's left sidebar. Look at the right sidebar (File Inspector). Make sure the checkbox under 'Target Membership' for DragsterOS is CHECKED.")
+            print("👉 FIX: Click hmPlan.csv in Xcode's left sidebar. Make sure 'Target Membership' for DragsterOS is CHECKED in the right inspector.")
             return []
         }
         
@@ -25,25 +25,30 @@ struct CSVParserEngine {
             for (index, row) in rows.enumerated() {
                 let cleanRow = row.trimmingCharacters(in: .whitespacesAndNewlines)
                 
-                // Skip headers and empty lines
+                // Skip headers and empty or broken lines
                 if cleanRow.isEmpty || cleanRow.lowercased().hasPrefix("week") || cleanRow.hasPrefix(",,,") { continue }
                 
                 let columns = parseCSVRow(cleanRow)
                 
-                // 2. CHECK COLUMN COUNT
-                // Lowered from 9 to 8 just in case your CSV is missing a final notes column
+                // 2. COLUMN MAPPING & TYPE CASTING
                 if columns.count >= 8 {
                     let week = Int(columns[0]) ?? 0
                     let dateString = columns[1].trimmingCharacters(in: .whitespaces)
                     let activity = columns.count > 3 ? columns[3] : "REST"
                     let intensity = columns.count > 4 ? columns[4] : ""
                     let strength = columns.count > 5 ? columns[5] : ""
-                    let fuelTier = columns.count > 7 ? columns[7] : "MED FUEL TIER"
+                    
+                    // ✨ NEW: Map Index 6 to Target Load, safely defaulting to 0.0 if empty/invalid
+                    let targetLoadString = columns.count > 6 ? columns[6].trimmingCharacters(in: .whitespaces) : "0"
+                    let targetLoad = Double(targetLoadString) ?? 0.0
+                    
+                    let fuelTier = columns.count > 7 ? columns[7] : "MED"
                     let notes = columns.count > 8 ? columns[8].replacingOccurrences(of: "\"", with: "") : ""
                     
                     let fullDateString = "\(dateString)-\(currentYear)"
                     let date = dateFormatter.date(from: fullDateString) ?? .now
                     
+                    // 3. OBJECT INSTANTIATION
                     let mission = PlannedMission(
                         week: week,
                         dateString: dateString,
@@ -51,8 +56,9 @@ struct CSVParserEngine {
                         activity: activity,
                         powerTarget: intensity,
                         strength: strength,
-                        energyProtocol: fuelTier,
-                        commandersIntent: notes
+                        fuelTier: fuelTier,
+                        coachNotes: notes,
+                        targetLoad: targetLoad // ✨ Injected here
                     )
                     macroCycle.append(mission)
                 } else {
@@ -69,6 +75,7 @@ struct CSVParserEngine {
         return macroCycle
     }
     
+    // MARK: - ⚙️ INTERNAL LOGIC: ROW DELINEATION
     private static func parseCSVRow(_ row: String) -> [String] {
         var result: [String] = []
         var current = ""

@@ -7,86 +7,41 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 🎨 SHEET: INITIALIZE EQUIPMENT
 struct AddShoeSheet: View {
-    
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    @State private var brand: String = ""
-    @State private var model: String = ""
-    @State private var terrain: String = "Road"
-    @State private var purpose: String = "Daily"
-    @State private var currentMileage: Double = 0.0
-    
-    let terrains = ["Road", "Trail", "Track"]
-    let purposes = ["Recovery", "Daily", "Speed", "Race"]
+    @State private var brand = ""
+    @State private var model = ""
+    @State private var lifespan: Double = 800
     
     var body: some View {
         NavigationStack {
-            ZStack {
-                ColorTheme.background.ignoresSafeArea()
-                
-                Form {
-                    Section(header: Text("SPECIFICATIONS").font(.caption.monospaced())) {
-                        TextField("Brand (e.g., Nike)", text: $brand)
-                            .foregroundStyle(ColorTheme.textPrimary)
-                        
-                        TextField("Model (e.g., Vaporfly 3)", text: $model)
-                            .foregroundStyle(ColorTheme.textPrimary)
-                        
-                        Picker("Terrain", selection: $terrain) {
-                            ForEach(terrains, id: \.self) { Text($0) }
-                        }
-                        
-                        Picker("Purpose", selection: $purpose) {
-                            ForEach(purposes, id: \.self) { Text($0) }
-                        }
-                    }
-                    .listRowBackground(ColorTheme.panel)
-                    
-                    Section(header: Text("STRUCTURAL HISTORY").font(.caption.monospaced())) {
-                        VStack(alignment: .leading) {
-                            Text("\(Int(currentMileage)) KM ON CHASSIS")
-                                .font(.system(.body, design: .monospaced, weight: .bold))
-                                .foregroundStyle(ColorTheme.prime)
-                            
-                            Slider(value: $currentMileage, in: 0...500, step: 1)
-                        }
-                    }
-                    .listRowBackground(ColorTheme.panel)
+            Form {
+                Section("SPECIFICATIONS") {
+                    TextField("Brand (e.g. Nike)", text: $brand)
+                    TextField("Model (e.g. Alphafly 3)", text: $model)
                 }
-                .scrollContentBackground(.hidden)
+                Section("LIFECYCLE TARGET") {
+                    HStack {
+                        Text("MAX KM")
+                        Spacer()
+                        TextField("800", value: $lifespan, format: .number).keyboardType(.numberPad).multilineTextAlignment(.trailing)
+                    }
+                }
             }
-            .navigationTitle("INITIALIZE CHASSIS")
-            .navigationBarTitleDisplayMode(.inline)
+            .applyTacticalOS(title: "COMMISSION CHASSIS", showBack: false)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("ABORT") { dismiss() }
-                        .foregroundStyle(ColorTheme.textMuted)
-                }
+                ToolbarItem(placement: .topBarLeading) { Button("ABORT") { dismiss() } }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("ENGAGE") { saveShoe() }
-                        .foregroundStyle(ColorTheme.prime)
-                        .font(.caption.bold().monospaced())
-                        .disabled(brand.isEmpty || model.isEmpty)
+                    Button("CONFIRM") {
+                        let newShoe = RunningShoe(brand: brand, model: model, maxLifespan: lifespan)
+                        context.insert(newShoe)
+                        dismiss()
+                    }
+                    .disabled(brand.isEmpty || model.isEmpty)
                 }
             }
         }
-    }
-    
-    private func saveShoe() {
-        let newShoe = RunningShoe(
-            brand: brand,
-            model: model,
-            terrainType: terrain,
-            purpose: purpose,
-            currentMileage: currentMileage
-        )
-        
-        context.insert(newShoe)
-        try? context.save()
-        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        dismiss()
     }
 }

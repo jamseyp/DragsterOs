@@ -5,11 +5,11 @@ struct AddPlannedActivitySheet: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
+    // MARK: - 🕹️ LOCAL STATE
     @State private var date = Date()
     @State private var title = ""
-    @State private var intensity = ""
-    @State private var fuel = "🟡 MED FUEL TIER (2600 kcal)"
-    @State private var notes = ""
+    @State private var plannedTSS: Double = 0.0 // ✨ Added numeric TSS
+    @State private var fuel = "MED" // Cleaned to match your OperationalDirective structure
     
     var body: some View {
         NavigationStack {
@@ -31,30 +31,40 @@ struct AddPlannedActivitySheet: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .foregroundStyle(ColorTheme.textPrimary)
                             
-                            TextField("Power Target (e.g., 180W - 200W)", text: $intensity)
-                                .padding()
-                                .background(ColorTheme.surface)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .foregroundStyle(ColorTheme.textPrimary)
+                            // ✨ Numeric input for TSS
+                            HStack {
+                                Text("TARGET TSS")
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(ColorTheme.textMuted)
+                                Spacer()
+                                TextField("0", value: $plannedTSS, format: .number)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                                    .foregroundStyle(ColorTheme.prime)
+                            }
+                            .padding()
+                            .background(ColorTheme.surface)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
                             
-                            DatePicker("Target Date", selection: $date, displayedComponents: .date)
+                            DatePicker("Target Date", selection: $date, displayedComponents: [.date, .hourAndMinute])
                                 .padding()
                                 .background(ColorTheme.surface)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                                 .foregroundStyle(ColorTheme.textPrimary)
                         }
                         
-                        // NUTRITION & NOTES
+                        // NUTRITION & LOGISTICS
                         VStack(alignment: .leading, spacing: 16) {
                             Text("LOGISTICS")
                                 .font(.system(size: 12, weight: .black, design: .monospaced))
                                 .foregroundStyle(ColorTheme.prime)
                             
                             Picker("Fuel Tier", selection: $fuel) {
-                                Text("Low Carb").tag("🟢 LOW FUEL TIER (2200 kcal)")
-                                Text("Medium Carb").tag("🟡 MED FUEL TIER (2600 kcal)")
-                                Text("High Carb").tag("🔴 HIGH FUEL TIER (3000 kcal)")
-                                Text("Race Fuel").tag("🏁 RACE FUEL")
+                                Text("Low Carb").tag("LOW")
+                                Text("Medium Carb").tag("MED")
+                                Text("High Carb").tag("HIGH")
+                                Text("Race Fuel").tag("RACE")
                             }
                             .pickerStyle(.menu)
                             .padding()
@@ -62,13 +72,6 @@ struct AddPlannedActivitySheet: View {
                             .background(ColorTheme.surface)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                             .tint(ColorTheme.textPrimary)
-                            
-                            TextField("Commander's Intent (Notes)", text: $notes, axis: .vertical)
-                                .lineLimit(3...6)
-                                .padding()
-                                .background(ColorTheme.surface)
-                                .clipShape(RoundedRectangle(cornerRadius: 12))
-                                .foregroundStyle(ColorTheme.textPrimary)
                         }
                     }
                     .padding()
@@ -79,13 +82,14 @@ struct AddPlannedActivitySheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("ABORT") { dismiss() }
+                        .font(.system(size: 12, weight: .black, design: .monospaced))
                         .foregroundStyle(ColorTheme.critical)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("AUTHORIZE") {
                         saveMission()
                     }
-                    .font(.system(size: 16, weight: .bold))
+                    .font(.system(size: 12, weight: .black, design: .monospaced))
                     .foregroundStyle(title.isEmpty ? .gray : ColorTheme.prime)
                     .disabled(title.isEmpty)
                 }
@@ -93,23 +97,25 @@ struct AddPlannedActivitySheet: View {
         }
     }
     
+    // MARK: - ⚙️ LOGIC
     private func saveMission() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM-dd" // Matches your CSV format perfectly
-        let dateString = formatter.string(from: date)
-        
-        let newMission = PlannedMission(
-            week: 0, // Freelance missions don't need a strict week number
-            dateString: dateString,
+        // ✨ FIXED: Saves to OperationalDirective, not PlannedMission
+        let newDirective = OperationalDirective(
             date: date,
             activity: title,
-            powerTarget: intensity,
-            strength: "",
-            energyProtocol: fuel,
-            commandersIntent: notes.isEmpty ? "User-defined freelance mission." : notes
+            fuelTier: fuel,
+            targetLoad: plannedTSS,
+            isCompleted: false
         )
         
-        context.insert(newMission)
-        dismiss()
+        context.insert(newDirective)
+        
+        do {
+            try context.save()
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            dismiss()
+        } catch {
+            print("❌ PERSISTENCE FAULT: \(error.localizedDescription)")
+        }
     }
 }
