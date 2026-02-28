@@ -1,24 +1,23 @@
 import SwiftUI
 import SwiftData
 
-
 // MARK: - 🎯 STRATEGIC OBJECTIVES COMMAND
 struct StrategicObjectivesView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
     // Fetch objectives from SwiftData, sorting purely by date
-        @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
+    @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
         
-        // 🧠 Tactical Memory Sort: Prioritizes active targets, then chronologically
-        private var objectives: [StrategicObjective] {
-            fetchedObjectives.sorted {
-                if $0.isCompleted == $1.isCompleted {
-                    return $0.targetDate < $1.targetDate
-                }
-                return !$0.isCompleted && $1.isCompleted // Places active (false) above completed (true)
+    // 🧠 Tactical Memory Sort: Prioritizes active targets, then chronologically
+    private var objectives: [StrategicObjective] {
+        fetchedObjectives.sorted {
+            if $0.isCompleted == $1.isCompleted {
+                return $0.targetDate < $1.targetDate
             }
+            return !$0.isCompleted && $1.isCompleted // Places active (false) above completed (true)
         }
+    }
     
     // State for CRUD Operations
     @State private var editingObjective: StrategicObjective?
@@ -29,12 +28,12 @@ struct StrategicObjectivesView: View {
             
             // SYSTEM HEADER
             HStack {
-                Text("STRATEGIC OBJECTIVES")
+                Text("Strategic Objectives")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.textMuted)
                 Spacer()
                 let activeCount = objectives.filter { !$0.isCompleted }.count
-                Text("\(activeCount) ACTIVE")
+                Text("\(activeCount) Active")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(ColorTheme.prime)
             }
@@ -47,7 +46,7 @@ struct StrategicObjectivesView: View {
                     Image(systemName: "scope")
                         .font(.system(size: 40))
                         .foregroundStyle(ColorTheme.surfaceBorder)
-                    Text("NO TARGETS ACQUIRED")
+                    Text("No Targets Acquired")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundStyle(ColorTheme.textMuted)
                 }
@@ -74,7 +73,7 @@ struct StrategicObjectivesView: View {
             Button(action: { showingAddSheet = true }) {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("ESTABLISH NEW TARGET")
+                    Text("Establish New Target")
                 }
                 .font(.system(size: 14, weight: .black, design: .monospaced))
                 .frame(maxWidth: .infinity)
@@ -87,12 +86,13 @@ struct StrategicObjectivesView: View {
             .padding(.bottom, 40)
             .padding(.top, 12)
         }
-        .applyTacticalOS(title: "PRIMARY OBJECTIVES", showBack: true)
+        .applyTacticalOS(title: "Primary Objectives", showBack: true)
         .sheet(item: $editingObjective) { objective in
             EditObjectiveSheet(objective: objective)
                 .presentationDetents([.large])
         }
         .sheet(isPresented: $showingAddSheet) {
+            // Note: Ensure ObjectiveSetupSheet() exists in your project.
             ObjectiveSetupSheet()
                 .presentationDetents([.large])
         }
@@ -124,7 +124,7 @@ struct EditObjectiveSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("TARGET PARAMETERS")) {
+                Section(header: Text("Target Parameters")) {
                     TextField("Event Name", text: $objective.eventName)
                         .font(.system(size: 16, weight: .bold, design: .monospaced))
                     
@@ -136,9 +136,9 @@ struct EditObjectiveSheet: View {
                         .font(.system(size: 14, weight: .bold, design: .monospaced))
                 }
                 
-                Section(header: Text("KINETIC TARGETS")) {
+                Section(header: Text("Kinetic Targets")) {
                     HStack {
-                        Text("TARGET POWER (W)")
+                        Text("Target Power (W)")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         Spacer()
@@ -150,7 +150,7 @@ struct EditObjectiveSheet: View {
                     }
                     
                     HStack {
-                        Text("TARGET PACE")
+                        Text("Target Pace")
                             .font(.system(size: 12, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         Spacer()
@@ -162,7 +162,7 @@ struct EditObjectiveSheet: View {
                 }
                 
                 Section {
-                    Toggle("MISSION ACCOMPLISHED", isOn: $objective.isCompleted)
+                    Toggle("Mission Accomplished", isOn: $objective.isCompleted)
                         .tint(.green)
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                 } footer: {
@@ -170,11 +170,11 @@ struct EditObjectiveSheet: View {
                         .font(.system(size: 10))
                 }
             }
-            .applyTacticalOS(title: "RECALIBRATE TARGET", showBack: false)
+            .applyTacticalOS(title: "Recalibrate Target", showBack: false)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("COMMIT") {
+                    Button("Commit") {
                         try? context.save()
                         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         dismiss()
@@ -202,11 +202,11 @@ struct ObjectiveRowCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("T-MINUS \(max(daysRemaining, 0)) DAYS • \(objective.location.uppercased())")
+                    Text("T-Minus \(max(daysRemaining, 0)) Days • \(objective.location)")
                         .font(.system(size: 10, weight: .black, design: .monospaced))
                         .foregroundStyle(objective.isCompleted ? ColorTheme.textMuted : ColorTheme.warning)
                     
-                    Text(objective.eventName.uppercased())
+                    Text(objective.eventName)
                         .font(.system(size: 16, weight: .heavy, design: .monospaced))
                         .foregroundStyle(objective.isCompleted ? ColorTheme.textMuted : ColorTheme.textPrimary)
                         .strikethrough(objective.isCompleted, color: ColorTheme.textMuted)
@@ -219,7 +219,7 @@ struct ObjectiveRowCard: View {
                         .font(.system(size: 20))
                         .foregroundStyle(.green)
                 } else {
-                    Text(objective.targetDate.formatted(date: .abbreviated, time: .omitted).uppercased())
+                    Text(objective.targetDate.formatted(date: .abbreviated, time: .omitted))
                         .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .padding(.horizontal, 6).padding(.vertical, 4)
                         .background(ColorTheme.surfaceBorder)
@@ -240,7 +240,7 @@ struct ObjectiveRowCard: View {
                 }
                 
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(objective.targetPace.uppercased())
+                    Text(objective.targetPace)
                         .font(.system(size: 16, weight: .bold, design: .rounded))
                         .foregroundStyle(ColorTheme.prime)
                 }

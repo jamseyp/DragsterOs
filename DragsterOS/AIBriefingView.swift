@@ -10,7 +10,12 @@ struct AIBriefingView: View {
     @Query(sort: \KineticSession.date, order: .reverse) private var sessions: [KineticSession]
     @Query(sort: \OperationalDirective.date, order: .forward) private var missions: [OperationalDirective]
     
+    // ✨ NEW STREAMS: Registry and Objectives
+    @Query private var registries: [UserRegistry]
+    @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
+    
     @State private var healthManager = HealthKitManager.shared
+    @State private var showingRegistry = false
     
     // 🕹️ ASYNC PAYLOAD STATE
     @State private var yesterdayNet: Double = 0
@@ -29,7 +34,6 @@ struct AIBriefingView: View {
         return logs.first(where: { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) })
     }
     
-    /// Identifies if there is an operational directive scheduled for today
     private var todayMission: OperationalDirective? {
         let startOfDay = Calendar.current.startOfDay(for: .now)
         return missions.first { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) }
@@ -41,15 +45,15 @@ struct AIBriefingView: View {
         
         var flags: [String] = []
         
-        if readiness >= 80 { flags.append("STATUS: GREEN (OPTIMAL)") }
-        else if readiness >= 40 { flags.append("STATUS: YELLOW (DEGRADED)") }
-        else { flags.append("STATUS: RED (CRITICAL FATIGUE)") }
+        if readiness >= 80 { flags.append("Status: Green (Optimal)") }
+        else if readiness >= 40 { flags.append("Status: Yellow (Degraded)") }
+        else { flags.append("Status: Red (Critical Fatigue)") }
         
-        if yesterdayNet < -500 { flags.append("WARNING: THERMODYNAMIC DEFICIT") }
-        if sleep > 0 && sleep < 6.0 { flags.append("WARNING: INADEQUATE RECOVERY") }
-        if respiratoryRate > 18.0 { flags.append("WARNING: ELEVATED RESPIRATION (CNS STRESS)") }
+        if yesterdayNet < -500 { flags.append("Warning: Thermodynamic Deficit") }
+        if sleep > 0 && sleep < 6.0 { flags.append("Warning: Inadequate Recovery") }
+        if respiratoryRate > 18.0 { flags.append("Warning: Elevated Respiration (CNS Stress)") }
         
-        return flags.isEmpty ? "STATUS: NOMINAL" : flags.joined(separator: " | ")
+        return flags.isEmpty ? "Status: Nominal" : flags.joined(separator: " | ")
     }
     
     // MARK: - 📦 PAYLOAD CONSTRUCTOR
@@ -58,7 +62,20 @@ struct AIBriefingView: View {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         
+        let registry = registries.first ?? UserRegistry()
+        
         let sensorData: [String: Any] = [
+            "user_baselines": [
+                "target_weight_kg": registry.targetWeight, // ✨ INJECTED: Core metric for coach logic
+                "max_hr_bpm": registry.maxHR,
+                "resting_hr_bpm": registry.restingHR,
+                "vo2_max": registry.vo2Max,
+                "z2_aerobic_limit_bpm": registry.zone2Max,
+                "z4_threshold_limit_bpm": registry.zone4Max,
+                "ftp_watts": registry.functionalThresholdPower,
+                "target_tdee_kcal": registry.effectiveTDEE,
+                "protein_floor_g": 215 // ✨ INJECTED: Mandatory macro floor
+            ],
             "autonomic_nervous_system": [
                 "readiness_score": todayLog?.readinessScore ?? 0,
                 "hrv_ms": todayLog?.hrv ?? 0,
@@ -74,11 +91,16 @@ struct AIBriefingView: View {
             ],
             "thermodynamics": [
                 "yesterday_net_kcal": yesterdayNet,
-                "status": yesterdayNet < -500 ? "CRITICAL_DEFICIT" : (yesterdayNet < -50 ? "OPTIMAL_CUT" : "MAINTENANCE")
+                "status": yesterdayNet < -500 ? "Critical Deficit" : (yesterdayNet < -50 ? "Optimal Cut" : "Maintenance")
             ],
             "biomechanics_last_session": [
                 "avg_gct_ms": sessions.first?.groundContactTime ?? 0,
                 "avg_osc_cm": sessions.first?.verticalOscillation ?? 0
+            ],
+            "kinetic_output_last_session": [
+                "avg_hr_bpm": sessions.first?.averageHR ?? 0,
+                "intensity_vs_z2": (sessions.first?.averageHR ?? 0) / Double(registry.zone2Max > 0 ? registry.zone2Max : 1),
+                "avg_power_w": sessions.first?.avgPower ?? 0
             ]
         ]
         
@@ -90,12 +112,21 @@ struct AIBriefingView: View {
     }
     
     private var compiledPayload: String {
-        let missionContext = todayMission != nil ? "ACTIVITY: \(todayMission!.activity.uppercased())\nTARGET TSS: \(Int(todayMission!.targetLoad))\nFUEL TIER: \(todayMission!.fuelTier)\nCOACH NOTES: \(todayMission!.coachNotes)" : "NO DIRECTIVE SCHEDULED FOR TODAY. RECOVERY POSTURE RECOMMENDED."
+        let registry = registries.first ?? UserRegistry()
         
-        let header = "[SYSTEM: DRAGSTER OS - DIAGNOSTIC EXPORT]\nCOMMAND SYSTEM ASSESSMENT: \(dynamicCommandStatus)\n\n"
-        let request = "REQUEST: You are a high-performance tactical AI coach. Provide a concise morning briefing based on the telemetry below. Assess if the chassis is prepared for today's specific directive. Keep the tone clinical, objective, and blunt. Maximum 3 short paragraphs.\n\n"
-        let directiveData = "// TODAY'S DIRECTIVE //\n\(missionContext)\n\n"
-        let jsonData = "// CLINICAL TELEMETRY JSON //\n\(compiledJSONPayload)"
+        // 🎯 Find active target
+        let activeObjective = fetchedObjectives.first(where: { !$0.isCompleted })
+        let objectiveString = activeObjective != nil ? "\(activeObjective!.eventName) in \(activeObjective!.location) on \(activeObjective!.targetDate.formatted(date: .abbreviated, time: .omitted)) (Target Pace: \(activeObjective!.targetPace), Target Power: \(activeObjective!.targetPower)W)" : "Maintain Base Fitness"
+        
+        let missionContext = todayMission != nil ? "Activity: \(todayMission!.activity)\nTarget TSS: \(Int(todayMission!.targetLoad))\nFuel Tier: \(todayMission!.fuelTier)\nCoach Notes: \(todayMission!.coachNotes)" : "No directive scheduled for today. Focus on dopamine-safe, active recovery."
+        
+        // ✨ INJECTED: Updated Header and Request for HYBRID EVOLUTION v3
+        let header = "[System: Dragster OS - Telemetry Feed]\nStrategic Objective: \(objectiveString)\nCommand System Assessment: \(dynamicCommandStatus)\n\n"
+        
+        let request = "Request: You are THE HYBRID EVOLUTION v3 — an elite, fiercely supportive, and neurodivergent-optimized performance coach. Your athlete is Jamie. Execute the MANDATORY 08:00 BRIEF based on the Dragster OS telemetry below. Structure your response exactly into: 1. DAILY DRAGSTER OS TELEMETRY, 2. MACRO BLUEPRINT (enforcing the 215g protein floor against the Target TDEE), and 3. TRAINING ALIGNMENT. Frame any required rest as 'charging the battery' or 'mindful reloading' to soothe ADHD impatience. Tone: Warm, elegant, fiercely supportive, and deeply structured.\n\n"
+        
+        let directiveData = "// Today's Directive //\n\(missionContext)\n\n"
+        let jsonData = "// Clinical Telemetry JSON //\n\(compiledJSONPayload)"
         
         return header + request + directiveData + jsonData
     }
@@ -106,43 +137,61 @@ struct AIBriefingView: View {
             VStack(alignment: .leading, spacing: 24) {
                 
                 // 1. SYSTEM STATUS HEADER
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("INTELLIGENCE PAYLOAD")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
-                            .foregroundStyle(ColorTheme.prime)
-                        Text(isCompiling ? "GATHERING TELEMETRY..." : "PAYLOAD SECURED")
-                            .font(.system(size: 16, weight: .heavy, design: .rounded))
-                            .foregroundStyle(isCompiling ? .orange : .green)
+                VStack(spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Intelligence Payload")
+                                .font(.system(size: 14, weight: .black, design: .monospaced))
+                                .foregroundStyle(ColorTheme.prime)
+                            Text(isCompiling ? "Gathering Telemetry..." : "Payload Secured")
+                                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                                .foregroundStyle(isCompiling ? .orange : .green)
+                        }
+                        Spacer()
+                        
+                        Button(action: { showingRegistry = true }) {
+                            Image(systemName: "gearshape.2.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(ColorTheme.prime)
+                                .padding(8)
+                                .background(ColorTheme.surface)
+                                .clipShape(Circle())
+                        }
                     }
-                    Spacer()
-                    Image(systemName: "cpu")
-                        .font(.system(size: 24))
-                        .foregroundStyle(ColorTheme.prime)
+                    .padding(.horizontal)
+                    
+                    if let reg = registries.first {
+                        HStack(spacing: 12) {
+                            ZoneIndicator(label: "Z2", value: "\(reg.zone2Max)", color: ColorTheme.prime)
+                            ZoneIndicator(label: "Z4", value: "\(reg.zone4Max)", color: .orange)
+                            ZoneIndicator(label: "VO2", value: String(format: "%.1f", reg.vo2Max), color: .purple)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                    }
                 }
-                .padding(.horizontal)
                 
                 if isCompiling {
                     ProgressView().tint(ColorTheme.prime).frame(maxWidth: .infinity, minHeight: 200)
                 } else {
                     
-                    // 2. HUMAN-READABLE DOSSIER (UX Improvement)
+                    // 2. HUMAN-READABLE DOSSIER
                     VStack(alignment: .leading, spacing: 16) {
-                        Text("DOSSIER SUMMARY")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                        Text("Dossier Summary")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         
                         VStack(alignment: .leading, spacing: 12) {
-                            DossierRow(label: "SYSTEM FLAGS", value: dynamicCommandStatus, color: dynamicCommandStatus.contains("RED") || dynamicCommandStatus.contains("WARNING") ? ColorTheme.critical : .green)
+                            DossierRow(label: "System Flags", value: dynamicCommandStatus, color: dynamicCommandStatus.contains("Red") || dynamicCommandStatus.contains("Warning") ? ColorTheme.critical : .green)
                             
                             Divider().background(ColorTheme.surfaceBorder)
                             
-                            DossierRow(label: "TODAY'S MISSION", value: todayMission?.activity.uppercased() ?? "REST DAY", color: ColorTheme.prime)
+                            DossierRow(label: "Today's Mission", value: todayMission?.activity ?? "Rest Day", color: ColorTheme.prime)
                             
                             if let mission = todayMission {
                                 HStack(spacing: 16) {
-                                    DossierSubStat(label: "LOAD", value: "\(Int(mission.targetLoad)) TSS")
-                                    DossierSubStat(label: "FUEL", value: mission.fuelTier)
+                                    DossierSubStat(label: "Load", value: "\(Int(mission.targetLoad)) TSS")
+                                    DossierSubStat(label: "Fuel", value: mission.fuelTier)
                                 }
                             }
                         }
@@ -152,16 +201,16 @@ struct AIBriefingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
                     
-                    // 3. RAW EXPORT (Contained and manageable)
+                    // 3. RAW EXPORT
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("RAW EXPORT STRING")
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        Text("Raw Export String")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                         
                         TextEditor(text: .constant(compiledPayload))
                             .font(.system(size: 10, weight: .regular, design: .monospaced))
                             .foregroundStyle(ColorTheme.textPrimary)
-                            .frame(height: 150) // Reduced height to keep it out of the way
+                            .frame(height: 150)
                             .padding(8)
                             .background(ColorTheme.background)
                             .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -172,7 +221,7 @@ struct AIBriefingView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal)
                     
-                    // 4. THE TRANSMIT BUTTON
+                    // 4. TRANSMIT BUTTON
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         UIPasteboard.general.string = compiledPayload
@@ -183,9 +232,9 @@ struct AIBriefingView: View {
                     }) {
                         HStack {
                             Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
-                            Text(isCopied ? "PAYLOAD COPIED" : "COPY TO CLIPBOARD")
+                            Text(isCopied ? "Payload Copied" : "Copy to Clipboard")
                         }
-                        .font(.system(size: 14, weight: .black, design: .monospaced))
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(isCopied ? .green : ColorTheme.prime)
@@ -198,9 +247,11 @@ struct AIBriefingView: View {
             }
             .padding(.top, 20)
         }
-        .applyTacticalOS(title: "AI BRIEFING", showBack: false) // Assuming it's a main tab now
+        .applyTacticalOS(title: "AI Briefing", showBack: false)
+        .sheet(isPresented: $showingRegistry) {
+            RegistrySettingsView()
+        }
         .task {
-            // Concurrent fetching for maximum speed
             async let fuel = healthManager.fetchYesterdayEnergyBalance()
             async let hrr = healthManager.fetchLatestHeartRateRecovery()
             async let resp = healthManager.fetchSleepingRespiratoryRate()
@@ -230,10 +281,10 @@ struct DossierRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(ColorTheme.textMuted)
             Text(value)
-                .font(.system(size: 14, weight: .heavy, design: .rounded))
+                .font(.system(size: 14, weight: .bold, design: .rounded))
                 .foregroundStyle(color)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -250,12 +301,33 @@ struct DossierSubStat: View {
                 .font(.system(size: 10, weight: .bold, design: .monospaced))
                 .foregroundStyle(ColorTheme.textMuted)
             Text(value)
-                .font(.system(size: 12, weight: .black, design: .monospaced))
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
                 .foregroundStyle(ColorTheme.textPrimary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(ColorTheme.surfaceBorder.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 4))
+    }
+}
+
+struct ZoneIndicator: View {
+    let label: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(ColorTheme.textMuted)
+            Text(value)
+                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(ColorTheme.surfaceBorder.opacity(0.3))
+        .clipShape(Capsule())
     }
 }

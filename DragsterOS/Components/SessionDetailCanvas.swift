@@ -6,14 +6,15 @@ struct SessionDetailCanvas: View {
     let session: KineticSession
     
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
-    
-    // ✨ MISSION COMPLIANCE LINK
     @Query private var allDirectives: [OperationalDirective]
+    
+    // ✨ NEW: Context injection for AI analysis
+    @Query private var registries: [UserRegistry]
+    @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
     
     @Environment(\.dismiss) private var dismiss
     
-    // ✨ JIT Data Arrays for Charts
-    private let healthManager = HealthKitManager.shared // FIXED: No @State
+    private let healthManager = HealthKitManager.shared
     
     @State private var hrArray: [(Date, Double)] = []
     @State private var powerArray: [(Date, Double)] = []
@@ -22,7 +23,6 @@ struct SessionDetailCanvas: View {
     @State private var gctSeries: [(Date, Double)] = []
     @State private var oscillationSeries: [(Date, Double)] = []
     
-    // ✨ COMPUTED PROPERTY TO GRAB THE ACTUAL MISSION OBJECT
     private var matchedDirective: OperationalDirective? {
         allDirectives.first { $0.id == session.linkedDirectiveID }
     }
@@ -60,47 +60,59 @@ struct SessionDetailCanvas: View {
         if session.distanceKM <= 0 { return ("-", "N/A") }
         if session.discipline == "SPIN" {
             let speed = session.distanceKM / (session.durationMinutes / 60.0)
-            return (String(format: "%.1f", speed), "KM/H")
+            return (String(format: "%.1f", speed), "km/h")
         } else {
             let pace = session.durationMinutes / session.distanceKM
             let mins = Int(pace), secs = Int((pace - Double(mins)) * 60)
-            return (String(format: "%d:%02d", mins, secs), "/KM")
+            return (String(format: "%d:%02d", mins, secs), "/km")
         }
     }
     
     // MARK: 🧠 HR ZONE ENGINE
-    private var hrZones: [(zone: String, time: Double, color: Color)] {
-        guard !hrArray.isEmpty else { return [] }
-        
-        var z1 = 0.0, z2 = 0.0, z3 = 0.0, z4 = 0.0, z5 = 0.0
-        let sorted = hrArray.sorted { $0.0 < $1.0 }
-        
-        for i in 0..<(sorted.count - 1) {
-            let bpm = sorted[i].1
-            let duration = sorted[i+1].0.timeIntervalSince(sorted[i].0)
-            let validDuration = min(duration, 10.0)
+    // MARK: 🧠 HR ZONE ENGINE
+        private var hrZones: [(zone: String, time: Double, color: Color)] {
+            guard !hrArray.isEmpty else { return [] }
             
-            switch bpm {
-            case ..<133: z1 += validDuration
-            case 133..<152: z2 += validDuration
-            case 152..<171: z3 += validDuration
-            case 171..<185: z4 += validDuration
-            default: z5 += validDuration
+            // ✨ FIXED: Pull the dynamic thresholds from your UserRegistry
+            let registry = registries.first ?? UserRegistry()
+            let z1Max = Double(registry.zone1Max)
+            let z2Max = Double(registry.zone2Max)
+            let z3Max = Double(registry.zone3Max)
+            let z4Max = Double(registry.zone4Max)
+            
+            var z1 = 0.0, z2 = 0.0, z3 = 0.0, z4 = 0.0, z5 = 0.0
+            let sorted = hrArray.sorted { $0.0 < $1.0 }
+            
+            for i in 0..<(sorted.count - 1) {
+                let bpm = sorted[i].1
+                let duration = sorted[i+1].0.timeIntervalSince(sorted[i].0)
+                let validDuration = min(duration, 10.0) // Cap gaps at 10 seconds
+                
+                // Route the time based on your personalized ceilings
+                if bpm <= z1Max { z1 += validDuration }
+                else if bpm <= z2Max { z2 += validDuration }
+                else if bpm <= z3Max { z3 += validDuration }
+                else if bpm <= z4Max { z4 += validDuration }
+                else { z5 += validDuration }
             }
+            
+            return [
+                ("Z1", z1 / 60.0, .gray),
+                ("Z2", z2 / 60.0, .cyan),
+                ("Z3", z3 / 60.0, .green),
+                ("Z4", z4 / 60.0, .orange),
+                ("Z5", z5 / 60.0, ColorTheme.critical)
+            ].filter { $0.1 > 0 }
         }
-        
-        return [
-            ("Z1", z1 / 60.0, .gray),
-            ("Z2", z2 / 60.0, .cyan),
-            ("Z3", z3 / 60.0, .green),
-            ("Z4", z4 / 60.0, .orange),
-            ("Z5", z5 / 60.0, ColorTheme.critical)
-        ].filter { $0.1 > 0 }
-    }
+    
+    
     
     // MARK: - 📤 HIGH-RESOLUTION JSON GENERATOR
     private func generateHighResJSONPayload() -> String {
-        // Strip timestamps and convert to raw value arrays to prevent AI context overload
+        let registry = registries.first ?? UserRegistry()
+        let activeObjective = fetchedObjectives.first(where: { !$0.isCompleted })
+        let objectiveString = activeObjective != nil ? "\(activeObjective!.eventName) (Target Pace: \(activeObjective!.targetPace))" : "Base Fitness"
+        
         let hrVector = hrArray.map { Int($0.1) }
         let pwrVector = powerArray.map { Int($0.1) }
         let cadVector = cadenceArray.map { Int($0.1) }
@@ -108,13 +120,17 @@ struct SessionDetailCanvas: View {
         let oscVector = oscillationSeries.map { Double(String(format: "%.1f", $0.1)) ?? 0.0 }
         
         let payloadDict: [String: Any] = [
+            "user_baselines": [
+                "target_weight_kg": registry.targetWeight,
+                "z2_aerobic_limit_bpm": registry.zone2Max,
+                "ftp_watts": registry.functionalThresholdPower
+            ],
             "session_metadata": [
                 "discipline": session.discipline,
                 "duration_minutes": session.durationMinutes,
                 "distance_km": session.distanceKM,
                 "rpe": session.rpe,
-                "morning_readiness_score": morningReadiness ?? 0,
-                // Removed chassis_equipment per previous purge
+                "morning_readiness_score": morningReadiness ?? 0
             ],
             "scalar_averages": [
                 "avg_hr": Int(session.averageHR),
@@ -136,36 +152,29 @@ struct SessionDetailCanvas: View {
         if let data = try? JSONSerialization.data(withJSONObject: payloadDict, options: .prettyPrinted),
            let jsonString = String(data: data, encoding: .utf8) {
             
-            // ✨ FIXED: Added matchedDirective handling
-            let missionTitle = matchedDirective?.activity ?? "FREE RUN (NO DIRECTIVE)"
+            let missionTitle = matchedDirective?.activity ?? "Free Run (No Directive)"
             let missionGoal = matchedDirective?.powerTarget ?? "N/A"
             
             return """
-            [SYSTEM: DRAGSTER OS - HIGH-RES SESSION EXPORT]
+            [System: Dragster OS - Post-Session Kinetic Analysis]
+            Strategic Objective: \(objectiveString)
             ---
-            INSTRUCTION TO AI COACH: 
-            Perform a Bio-Kinetic Diagnostic for the current training phase (10k/HM).
-
-            1. DIRECTIVE COMPLIANCE: Compare this session against the [MISSION CONTEXT] block. Did the athlete execute the prescribed intensity, or was there "Executive Over-reach"?
-            2. ENGINE EFFICIENCY: Analyze the Efficiency Factor (EF: Power/HR). Is the cardiovascular engine becoming more economical at this specific intensity?
-            3. MECHANICAL DURABILITY: Compare early-session Biomechanics (GCT/Oscillation) against late-session telemetry. Identify any "wattage leaks" or structural breakdown indicative of fatigue for a 95kg chassis.
-            4. ADAPTATION STATUS: Cross-reference this session's mechanical load against the Morning Readiness Score (Elite HRV).
+            Request: You are THE HYBRID EVOLUTION v3 — an elite, fiercely supportive performance coach. Jamie has just uploaded a high-resolution kinetic session. 
+            
+            Perform a post-flight debrief analyzing:
+            1. DIRECTIVE COMPLIANCE: Did he execute the prescribed mission (\(missionTitle)), or was there executive over-reach? Validate his discipline.
+            2. ENGINE EFFICIENCY: Review the Aerobic Decoupling and HR zones. Is the cardiovascular engine becoming more economical?
+            3. MECHANICAL DURABILITY: Review the Biomechanics (GCT/Oscillation arrays). Identify any "wattage leaks" or structural breakdown indicative of fatigue for a ~95kg powerful chassis. 
+            
+            Keep the tone warm, elegant, and structured. Remind him that protecting the body is just as important as pushing it.
             ---
+            Mission Context:
+            - Planned: \(missionTitle) (Target: \(missionGoal))
+            - Actual: \(Int(session.avgPower ?? 0))W @ \(Int(session.averageHR)) BPM, RPE \(session.rpe)/10
+            - Notes: \(session.coachNotes)
             
-            MISSION CONTEXT:
-            - PLANNED: \(missionTitle)
-            - GOAL: \(missionGoal)
-            - ACTUAL: \(Int(session.avgPower ?? 0))W @ \(Int(session.averageHR)) BPM
-            
-            REQUEST: Perform a deep tactical analysis of this session's mechanical and biological vectors.
-            
-            // TELEMETRY JSON //
+            // Telemetry JSON //
             \(jsonString)
-            
-            // DIRECTIVE //
-            1. Analyze the `vector_time_series` arrays for correlation. Does Form (GCT/Oscillation) degrade as HR spikes or toward the end of the arrays?
-            2. Evaluate the `aerobic_decoupling_pct`. If > 5%, address endurance drift.
-            3. Provide a clinical, objective summary of the Commander's mechanical efficiency.
             """
         }
         
@@ -176,14 +185,14 @@ struct SessionDetailCanvas: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 
-                // 1. ✨ AI EXPORT PIPELINE (UPDATED FOR JSON)
+                // 1. ✨ AI EXPORT PIPELINE
                 Button(action: {
                     let exportPayload = generateHighResJSONPayload()
                     UIPasteboard.general.string = exportPayload
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                 }) {
-                    Label("EXPORT FULL TELEMETRY TO GEMINI", systemImage: "brain.head.profile")
-                        .font(.system(size: 10, weight: .black, design: .monospaced))
+                    Label("Export Telemetry to Gemini", systemImage: "brain.head.profile")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundStyle(ColorTheme.background)
                         .padding()
                         .frame(maxWidth: .infinity)
@@ -196,12 +205,12 @@ struct SessionDetailCanvas: View {
                 // ✨ 2. THE MISSION COMPLIANCE BANNER
                 if let mission = matchedDirective {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("ASSIGNED MISSION")
-                            .font(.system(size: 10, weight: .black, design: .monospaced))
+                        Text("Assigned Mission")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.prime)
-                        Text(mission.activity.uppercased())
+                        Text(mission.activity)
                             .font(.system(size: 18, weight: .black, design: .rounded))
-                        Text("GOAL: \(mission.powerTarget)")
+                        Text("Goal: \(mission.powerTarget)")
                             .font(.system(size: 12, weight: .medium, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                     }
@@ -218,16 +227,16 @@ struct SessionDetailCanvas: View {
                     Image(systemName: session.disciplineIcon)
                         .font(.system(size: 40))
                         .foregroundStyle(session.disciplineColor)
-                    Text(session.distanceKM > 0 ? "\(session.distanceKM, specifier: "%.2f") KM" : "\(Int(session.durationMinutes)) MIN")
+                    Text(session.distanceKM > 0 ? "\(session.distanceKM, specifier: "%.2f") km" : "\(Int(session.durationMinutes)) min")
                         .font(.system(size: 56, weight: .heavy, design: .rounded))
                         .foregroundStyle(ColorTheme.textPrimary)
                 }
                 
                 // 4. SCALAR GRID: KINETICS
                 HStack(spacing: 12) {
-                    TelemetryBlock(title: "AVG POWER", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
-                    TelemetryBlock(title: "CADENCE", value: session.avgCadence != nil ? "\(Int(session.avgCadence!))" : "-", unit: "SPM")
-                    TelemetryBlock(title: "PACE/SPD", value: performanceMetric.value, unit: performanceMetric.unit)
+                    TelemetryBlock(title: "Avg Power", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
+                    TelemetryBlock(title: "Cadence", value: session.avgCadence != nil ? "\(Int(session.avgCadence!))" : "-", unit: "spm")
+                    TelemetryBlock(title: "Pace/Spd", value: performanceMetric.value, unit: performanceMetric.unit)
                 }
                 .padding(.horizontal)
                 
@@ -235,13 +244,13 @@ struct SessionDetailCanvas: View {
                 if session.groundContactTime != nil || session.verticalOscillation != nil || session.elevationGain != nil {
                     HStack(spacing: 12) {
                         if let gct = session.groundContactTime {
-                            TelemetryBlock(title: "GCT", value: "\(Int(gct))", unit: "MS")
+                            TelemetryBlock(title: "GCT", value: "\(Int(gct))", unit: "ms")
                         }
                         if let osc = session.verticalOscillation {
-                            TelemetryBlock(title: "OSCILLATION", value: String(format: "%.1f", osc), unit: "CM")
+                            TelemetryBlock(title: "Oscillation", value: String(format: "%.1f", osc), unit: "cm")
                         }
                         if let elev = session.elevationGain {
-                            TelemetryBlock(title: "ELEVATION", value: "\(Int(elev))", unit: "M")
+                            TelemetryBlock(title: "Elevation", value: "\(Int(elev))", unit: "m")
                         }
                     }
                     .padding(.horizontal)
@@ -249,9 +258,9 @@ struct SessionDetailCanvas: View {
 
                 // 6. SCALAR GRID: BIOMETRICS
                 HStack(spacing: 12) {
-                    TelemetryBlock(title: "READINESS", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
-                    TelemetryBlock(title: "AVG HR", value: "\(Int(session.averageHR))", unit: "BPM")
-                    TelemetryBlock(title: "EFFORT", value: "\(session.rpe)", unit: "/10")
+                    TelemetryBlock(title: "Readiness", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
+                    TelemetryBlock(title: "Avg HR", value: "\(Int(session.averageHR))", unit: "bpm")
+                    TelemetryBlock(title: "Effort", value: "\(session.rpe)", unit: "/10")
                 }
                 .padding(.horizontal)
                 
@@ -261,19 +270,19 @@ struct SessionDetailCanvas: View {
                         ProgressView().tint(ColorTheme.prime).padding(.vertical, 40)
                     } else {
                         if !hrArray.isEmpty {
-                            TelemetryChartCard(title: "HEART RATE VECTOR", icon: "heart.fill", data: hrArray, color: ColorTheme.critical, unit: "BPM")
+                            TelemetryChartCard(title: "Heart Rate Vector", icon: "heart.fill", data: hrArray, color: ColorTheme.critical, unit: "bpm")
                         }
                         if !powerArray.isEmpty {
-                            TelemetryChartCard(title: "MECHANICAL POWER", icon: "bolt.fill", data: powerArray, color: .orange, unit: "W")
+                            TelemetryChartCard(title: "Mechanical Power", icon: "bolt.fill", data: powerArray, color: .orange, unit: "W")
                         }
                         if !cadenceArray.isEmpty {
-                            TelemetryChartCard(title: "CADENCE SPARKLINE", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "SPM")
+                            TelemetryChartCard(title: "Cadence Sparkline", icon: "arrow.triangle.2.circlepath", data: cadenceArray, color: .cyan, unit: "spm")
                         }
                         if !gctSeries.isEmpty {
-                            TelemetryChartCard(title: "GCT", icon: "footprint.fill", data: gctSeries, color: .blue, unit:"MS") // Fixed unit to MS
+                            TelemetryChartCard(title: "Ground Contact Time", icon: "footprint.fill", data: gctSeries, color: .blue, unit:"ms")
                         }
                         if !oscillationSeries.isEmpty {
-                            TelemetryChartCard(title: "Vertical Oscillation", icon: "arrow.up.and.down.and.sparkles", data: oscillationSeries, color: .yellow, unit: "CM")
+                            TelemetryChartCard(title: "Vertical Oscillation", icon: "arrow.up.and.down.and.sparkles", data: oscillationSeries, color: .yellow, unit: "cm")
                         }
                         
                         // AEROBIC DECOUPLING METRIC
@@ -281,8 +290,8 @@ struct SessionDetailCanvas: View {
                             let isEfficient = decoupling <= 5.0
                             
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("AEROBIC DECOUPLING (Pa:Hr)")
-                                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                                Text("Aerobic Decoupling (Pa:Hr)")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
                                     .foregroundStyle(ColorTheme.textMuted)
                                 
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -308,8 +317,8 @@ struct SessionDetailCanvas: View {
                                     .foregroundStyle(ColorTheme.textMuted)
                                     .fixedSize(horizontal: false, vertical: true)
                                 
-                                Text("⚠️ METRIC ONLY VALID FOR STEADY-STATE / ZONE 2 EFFORTS. IGNORE FOR INTERVALS.")
-                                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                                Text("Metric only valid for steady-state / Zone 2 efforts. Ignore for intervals.")
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
                                     .foregroundStyle(ColorTheme.warning)
                                     .padding(.top, 4)
                             }
@@ -321,7 +330,7 @@ struct SessionDetailCanvas: View {
                         // TIME IN ZONES
                         if !hrZones.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("TIME IN ZONES").font(.system(size: 10, weight: .black, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
+                                Text("Time in Zones").font(.system(size: 10, weight: .bold, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
                                 
                                 HStack(spacing: 4) {
                                     ForEach(hrZones, id: \.zone) { zone in
@@ -353,7 +362,7 @@ struct SessionDetailCanvas: View {
                 // 8. ATHLETE NOTES
                 if !session.coachNotes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("ATHLETE NOTES").font(.system(size: 12, weight: .black, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
+                        Text("Athlete Notes").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
                         Text(session.coachNotes).foregroundStyle(ColorTheme.textPrimary).italic()
                     }
                     .padding().frame(maxWidth: .infinity, alignment: .leading).background(ColorTheme.surface).clipShape(RoundedRectangle(cornerRadius: 16)).padding(.horizontal)
@@ -361,7 +370,7 @@ struct SessionDetailCanvas: View {
             }
             .padding(.bottom, 40)
         }
-        .applyTacticalOS(title: "DIRECTIVE ANALYSIS")
+        .applyTacticalOS(title: "Directive Analysis")
         .overlay(alignment: .topLeading) {
             Button(action: { dismiss() }) {
                 Image(systemName: "chevron.left")

@@ -8,7 +8,7 @@
 
 ## 🫀 EPIC 2: DEEP BIOMETRICS & CHASSIS FATIGUE
 - [ ] **5. TSB (Training Stress Balance) Charting:** Calculate Chronic Training Load (CTL) and Acute Training Load (ATL) to map out your exact "Form" and "Fatigue" on a line chart over 90 days.
-- [ ] **6. Sleep Architecture Parsing:** Upgrade the HealthKit sleep query to not just track total hours, but calculate the percentage of Deep + REM sleep to output a "Neuromuscular Recovery Score".
+- [X] **6. Sleep Architecture Parsing:** Upgrade the HealthKit sleep query to not just track total hours, but calculate the percentage of Deep + REM sleep to output a "Neuromuscular Recovery Score".
 - [ ] **7. Localized Soreness Heatmap:** A visual human body diagram in the `PitStopView` where you can tap muscles (Calves, Quads, Hamstrings) to log localized DOMS severity.
 - [ ] **8. Automated W/kg Tracking:** Pull `HKQuantityTypeIdentifier.bodyMass` daily, merge it with your average running power, and plot your structural power-to-weight ratio over time.
 
