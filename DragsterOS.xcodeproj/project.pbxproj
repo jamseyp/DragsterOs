@@ -11,6 +11,9 @@
 		421567D82F51CA51001D54A9 /* ThermodynamicFuelWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421567D72F51CA51001D54A9 /* ThermodynamicFuelWidget.swift */; };
 		421567DA2F51D767001D54A9 /* FuelTierConfigurationSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421567D92F51D767001D54A9 /* FuelTierConfigurationSheet.swift */; };
 		421567DC2F51E10D001D54A9 /* AddShoeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 421567DB2F51E10D001D54A9 /* AddShoeSheet.swift */; };
+		42312A712F53073B007C4201 /* APIKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A702F53073B007C4201 /* APIKey.swift */; };
+		42312A732F53074A007C4201 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A722F53074A007C4201 /* GeminiService.swift */; };
+		42312A752F5307EC007C4201 /* GenerativeAI-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 42312A742F5307A2007C4201 /* GenerativeAI-Info.plist */; };
 		4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FC2F4DB52500B948FA /* GarageLogView.swift */; };
 		4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FE2F4DB65B00B948FA /* MissionControl.swift */; };
 		4233D3012F4DB68400B948FA /* OperationalBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3002F4DB68400B948FA /* OperationalBriefingView.swift */; };
@@ -84,6 +87,9 @@
 		421567D72F51CA51001D54A9 /* ThermodynamicFuelWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThermodynamicFuelWidget.swift; sourceTree = "<group>"; };
 		421567D92F51D767001D54A9 /* FuelTierConfigurationSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FuelTierConfigurationSheet.swift; sourceTree = "<group>"; };
 		421567DB2F51E10D001D54A9 /* AddShoeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddShoeSheet.swift; sourceTree = "<group>"; };
+		42312A702F53073B007C4201 /* APIKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKey.swift; sourceTree = "<group>"; };
+		42312A722F53074A007C4201 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+		42312A742F5307A2007C4201 /* GenerativeAI-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GenerativeAI-Info.plist"; sourceTree = "<group>"; };
 		4233D2FC2F4DB52500B948FA /* GarageLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageLogView.swift; sourceTree = "<group>"; };
 		4233D2FE2F4DB65B00B948FA /* MissionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionControl.swift; sourceTree = "<group>"; };
 		4233D3002F4DB68400B948FA /* OperationalBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationalBriefingView.swift; sourceTree = "<group>"; };
@@ -169,6 +175,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		42312A6F2F53072E007C4201 /* Gemini */ = {
+			isa = PBXGroup;
+			children = (
+				42312A742F5307A2007C4201 /* GenerativeAI-Info.plist */,
+				42312A722F53074A007C4201 /* GeminiService.swift */,
+				42312A702F53073B007C4201 /* APIKey.swift */,
+			);
+			path = Gemini;
+			sourceTree = "<group>";
+		};
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -243,6 +259,7 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				42312A6F2F53072E007C4201 /* Gemini */,
 				42169D202F522DDC00312CFD /* Views */,
 				42A738012F51E59300BAFC2A /* StrategicObjectivesView.swift */,
 				421567DB2F51E10D001D54A9 /* AddShoeSheet.swift */,
@@ -359,6 +376,7 @@
 			files = (
 				425C58722F4F0BF200EFBA4A /* hmPlan.csv in Resources */,
 				425C587C2F4F6D4800EFBA4A /* roadmap.md in Resources */,
+				42312A752F5307EC007C4201 /* GenerativeAI-Info.plist in Resources */,
 				42B884E22F4C942100A50290 /* Preview Assets.xcassets in Resources */,
 				42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */,
 				42B884DE2F4C942100A50290 /* Assets.xcassets in Resources */,
@@ -406,6 +424,7 @@
 				42A6C85E2F52D50700CE3A63 /* UserRegistry.swift in Sources */,
 				42D7085F2F503E3500DC1091 /* HardwareScanSheet.swift in Sources */,
 				426CBFC92F50818200559E41 /* AddSessionSheet.swift in Sources */,
+				42312A732F53074A007C4201 /* GeminiService.swift in Sources */,
 				426CBFC52F50816F00559E41 /* SessionDetailCanvas.swift in Sources */,
 				42D7085B2F503D8F00DC1091 /* ObjectiveSetupSheet.swift in Sources */,
 				425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */,
@@ -420,6 +439,7 @@
 				425C588C2F4F851A00EFBA4A /* PlannedMission.swift in Sources */,
 				421567DC2F51E10D001D54A9 /* AddShoeSheet.swift in Sources */,
 				425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */,
+				42312A712F53073B007C4201 /* APIKey.swift in Sources */,
 				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42D708612F50441900DC1091 /* MassEfficiencyView.swift in Sources */,
 				426CBFC12F50630700559E41 /* AIBriefingView.swift in Sources */,

@@ -8,7 +8,6 @@ struct SessionDetailCanvas: View {
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Query private var allDirectives: [OperationalDirective]
     
-    // ✨ NEW: Context injection for AI analysis
     @Query private var registries: [UserRegistry]
     @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
     
@@ -22,6 +21,10 @@ struct SessionDetailCanvas: View {
     @State private var isLoadingVectors = true
     @State private var gctSeries: [(Date, Double)] = []
     @State private var oscillationSeries: [(Date, Double)] = []
+    
+    // ✨ NEW: State for Integrated AI
+    @State private var aiResponse: String = ""
+    @State private var isAnalyzing = false
     
     private var matchedDirective: OperationalDirective? {
         allDirectives.first { $0.id == session.linkedDirectiveID }
@@ -69,43 +72,38 @@ struct SessionDetailCanvas: View {
     }
     
     // MARK: 🧠 HR ZONE ENGINE
-    // MARK: 🧠 HR ZONE ENGINE
-        private var hrZones: [(zone: String, time: Double, color: Color)] {
-            guard !hrArray.isEmpty else { return [] }
+    private var hrZones: [(zone: String, time: Double, color: Color)] {
+        guard !hrArray.isEmpty else { return [] }
+        
+        let registry = registries.first ?? UserRegistry()
+        let z1Max = Double(registry.zone1Max)
+        let z2Max = Double(registry.zone2Max)
+        let z3Max = Double(registry.zone3Max)
+        let z4Max = Double(registry.zone4Max)
+        
+        var z1 = 0.0, z2 = 0.0, z3 = 0.0, z4 = 0.0, z5 = 0.0
+        let sorted = hrArray.sorted { $0.0 < $1.0 }
+        
+        for i in 0..<(sorted.count - 1) {
+            let bpm = sorted[i].1
+            let duration = sorted[i+1].0.timeIntervalSince(sorted[i].0)
+            let validDuration = min(duration, 10.0)
             
-            // ✨ FIXED: Pull the dynamic thresholds from your UserRegistry
-            let registry = registries.first ?? UserRegistry()
-            let z1Max = Double(registry.zone1Max)
-            let z2Max = Double(registry.zone2Max)
-            let z3Max = Double(registry.zone3Max)
-            let z4Max = Double(registry.zone4Max)
-            
-            var z1 = 0.0, z2 = 0.0, z3 = 0.0, z4 = 0.0, z5 = 0.0
-            let sorted = hrArray.sorted { $0.0 < $1.0 }
-            
-            for i in 0..<(sorted.count - 1) {
-                let bpm = sorted[i].1
-                let duration = sorted[i+1].0.timeIntervalSince(sorted[i].0)
-                let validDuration = min(duration, 10.0) // Cap gaps at 10 seconds
-                
-                // Route the time based on your personalized ceilings
-                if bpm <= z1Max { z1 += validDuration }
-                else if bpm <= z2Max { z2 += validDuration }
-                else if bpm <= z3Max { z3 += validDuration }
-                else if bpm <= z4Max { z4 += validDuration }
-                else { z5 += validDuration }
-            }
-            
-            return [
-                ("Z1", z1 / 60.0, .gray),
-                ("Z2", z2 / 60.0, .cyan),
-                ("Z3", z3 / 60.0, .green),
-                ("Z4", z4 / 60.0, .orange),
-                ("Z5", z5 / 60.0, ColorTheme.critical)
-            ].filter { $0.1 > 0 }
+            if bpm <= z1Max { z1 += validDuration }
+            else if bpm <= z2Max { z2 += validDuration }
+            else if bpm <= z3Max { z3 += validDuration }
+            else if bpm <= z4Max { z4 += validDuration }
+            else { z5 += validDuration }
         }
-    
-    
+        
+        return [
+            ("Z1", z1 / 60.0, .gray),
+            ("Z2", z2 / 60.0, .cyan),
+            ("Z3", z3 / 60.0, .green),
+            ("Z4", z4 / 60.0, .orange),
+            ("Z5", z5 / 60.0, ColorTheme.critical)
+        ].filter { $0.1 > 0 }
+    }
     
     // MARK: - 📤 HIGH-RESOLUTION JSON GENERATOR
     private func generateHighResJSONPayload() -> String {
@@ -185,24 +183,66 @@ struct SessionDetailCanvas: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: 24) {
                 
-                // 1. ✨ AI EXPORT PIPELINE
+                // 1. ✨ INTEGRATED AI ANALYSIS BUTTON
                 Button(action: {
-                    let exportPayload = generateHighResJSONPayload()
-                    UIPasteboard.general.string = exportPayload
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    Task {
+                        isAnalyzing = true
+                        let payload = generateHighResJSONPayload()
+                        
+                        do {
+                            // Transmit payload to GeminiService
+                            aiResponse = try await GeminiService.shared.analyzeSession(payload: payload)
+                            UINotificationFeedbackGenerator().notificationOccurred(.success)
+                        } catch {
+                            aiResponse = "System Fault: \(error.localizedDescription)"
+                            UINotificationFeedbackGenerator().notificationOccurred(.error)
+                        }
+                        isAnalyzing = false
+                    }
                 }) {
-                    Label("Export Telemetry to Gemini", systemImage: "brain.head.profile")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundStyle(ColorTheme.background)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(ColorTheme.prime)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                    HStack(spacing: 12) {
+                        if isAnalyzing {
+                            ProgressView().tint(ColorTheme.background)
+                        } else {
+                            Image(systemName: "brain.head.profile")
+                        }
+                        Text(isAnalyzing ? "Consulting Coach..." : "Run Session Analysis")
+                    }
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundStyle(ColorTheme.background)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(isAnalyzing ? ColorTheme.textMuted : ColorTheme.prime)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+                .disabled(isAnalyzing)
                 .padding(.horizontal)
                 .padding(.top, 20)
                 
-                // ✨ 2. THE MISSION COMPLIANCE BANNER
+                // ✨ 2. THE COACH'S RESPONSE UI
+                if !aiResponse.isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "sparkles")
+                            Text("The Hybrid Evolution v3")
+                        }
+                        .font(.system(size: 12, weight: .black, design: .monospaced))
+                        .foregroundStyle(ColorTheme.prime)
+                        
+                        Text(aiResponse)
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
+                            .lineSpacing(6)
+                            .foregroundStyle(ColorTheme.textPrimary)
+                    }
+                    .padding(20)
+                    .background(ColorTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(ColorTheme.prime.opacity(0.3), lineWidth: 1))
+                    .padding(.horizontal)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
+                // 3. THE MISSION COMPLIANCE BANNER
                 if let mission = matchedDirective {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Assigned Mission")
@@ -222,7 +262,7 @@ struct SessionDetailCanvas: View {
                     .padding(.horizontal)
                 }
                 
-                // 3. HERO METRICS
+                // 4. HERO METRICS
                 VStack(spacing: 8) {
                     Image(systemName: session.disciplineIcon)
                         .font(.system(size: 40))
@@ -232,7 +272,7 @@ struct SessionDetailCanvas: View {
                         .foregroundStyle(ColorTheme.textPrimary)
                 }
                 
-                // 4. SCALAR GRID: KINETICS
+                // 5. SCALAR GRID: KINETICS
                 HStack(spacing: 12) {
                     TelemetryBlock(title: "Avg Power", value: session.avgPower != nil ? "\(Int(session.avgPower!))" : "-", unit: "W")
                     TelemetryBlock(title: "Cadence", value: session.avgCadence != nil ? "\(Int(session.avgCadence!))" : "-", unit: "spm")
@@ -240,7 +280,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // 5. SCALAR GRID: ADVANCED BIOMECHANICS
+                // 6. SCALAR GRID: ADVANCED BIOMECHANICS
                 if session.groundContactTime != nil || session.verticalOscillation != nil || session.elevationGain != nil {
                     HStack(spacing: 12) {
                         if let gct = session.groundContactTime {
@@ -256,7 +296,7 @@ struct SessionDetailCanvas: View {
                     .padding(.horizontal)
                 }
 
-                // 6. SCALAR GRID: BIOMETRICS
+                // 7. SCALAR GRID: BIOMETRICS
                 HStack(spacing: 12) {
                     TelemetryBlock(title: "Readiness", value: morningReadiness != nil ? "\(morningReadiness!)" : "-", unit: "/100")
                     TelemetryBlock(title: "Avg HR", value: "\(Int(session.averageHR))", unit: "bpm")
@@ -264,7 +304,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // 7. VECTOR CHARTS (JIT Rendered)
+                // 8. VECTOR CHARTS (JIT Rendered)
                 VStack(spacing: 16) {
                     if isLoadingVectors {
                         ProgressView().tint(ColorTheme.prime).padding(.vertical, 40)
@@ -359,7 +399,7 @@ struct SessionDetailCanvas: View {
                 }
                 .padding(.horizontal)
                 
-                // 8. ATHLETE NOTES
+                // 9. ATHLETE NOTES
                 if !session.coachNotes.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Athlete Notes").font(.system(size: 12, weight: .bold, design: .monospaced)).foregroundStyle(ColorTheme.textMuted)
