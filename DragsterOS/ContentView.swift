@@ -11,7 +11,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Query(sort: \KineticSession.date, order: .forward) private var sessions: [KineticSession]
-    @Query(sort: \OperationalDirective.date, order: .forward) private var missions: [OperationalDirective]
+    @Query(sort: \OperationalDirective.assignedDate, order: .forward) private var missions: [OperationalDirective]
     
     // Global Managers
     private var healthManager = HealthKitManager.shared
@@ -210,7 +210,7 @@ struct DashboardTab: View {
         logs.first(where: { Calendar.current.isDate($0.date, inSameDayAs: .now) })
     }
     private var todayMission: OperationalDirective? {
-        missions.first(where: { Calendar.current.isDate($0.date, inSameDayAs: .now) })
+        missions.first(where: { Calendar.current.isDate($0.assignedDate, inSameDayAs: .now) })
     }
     
     // Computed values for clean UI mapping
@@ -301,9 +301,11 @@ struct StrategyHubTab: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 20)
                 
-                NavigationLink(destination: MacroCycleView()) {
+                NavigationLink(destination: OperationsHubView()) {
                     DashboardMenuButton(title: "Training Plan", icon: "calendar.badge.clock", color: .purple)
                 }
+                
+                
                 
                 NavigationLink(destination: StrategicObjectivesView()) {
                     DashboardMenuButton(title: "Goals", icon: "scope", color: ColorTheme.critical)

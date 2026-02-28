@@ -59,4 +59,4 @@ final class PlannedMission {
 }
 
 // Seamless alias so the rest of the OS continues to function without refactoring
-typealias OperationalDirective = PlannedMission
+//typealias OperationalDirective = PlannedMission

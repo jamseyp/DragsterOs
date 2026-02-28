@@ -232,7 +232,7 @@ struct GarageLogView: View {
                     
                     let workoutDay = Calendar.current.startOfDay(for: workout.startDate)
                     let matchedMission = existingMissions.first {
-                        Calendar.current.startOfDay(for: $0.date) == workoutDay
+                        Calendar.current.startOfDay(for: $0.assignedDate) == workoutDay
                     }
                     
                     async let hrTask = healthManager.fetchAverageHR(for: workout)

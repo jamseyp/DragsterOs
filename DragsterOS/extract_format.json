@@ -1,0 +1,19 @@
+/*Output the training block strictly as a raw JSON array matching this exact schema. Do not include markdown formatting, backticks, or conversational text. Use ISO8601 format for dates (e.g., "2026-03-01T08:00:00Z").*/
+
+[
+  {
+    "assignedDate": "2026-03-01T08:00:00Z",
+    "discipline": "RUN",
+    "missionTitle": "Lactate Threshold 4x5",
+    "missionNotes": "Main set: 4x5min @ 105% FTP.",
+    "warmupMinutes": 15,
+    "intervalSets": 4,
+    "workDurationMinutes": 5,
+    "workTargetWatts": 285,
+    "recoveryDurationMinutes": 3,
+    "cooldownMinutes": 10,
+    "fuelTier": "HIGH",
+    "targetLoad": 85,
+    "coachNotes": "Focus on maintaining cadence during the final 90 seconds of each interval."
+  }
+]

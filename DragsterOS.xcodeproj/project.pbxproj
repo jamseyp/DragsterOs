@@ -14,6 +14,13 @@
 		42312A712F53073B007C4201 /* APIKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A702F53073B007C4201 /* APIKey.swift */; };
 		42312A732F53074A007C4201 /* GeminiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A722F53074A007C4201 /* GeminiService.swift */; };
 		42312A752F5307EC007C4201 /* GenerativeAI-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 42312A742F5307A2007C4201 /* GenerativeAI-Info.plist */; };
+		42312A782F530F0E007C4201 /* DirectiveScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A772F530F0E007C4201 /* DirectiveScheduler.swift */; };
+		42312A7E2F53262B007C4201 /* extract_format.json in Resources */ = {isa = PBXBuildFile; fileRef = 42312A7D2F53262B007C4201 /* extract_format.json */; };
+		42312A812F53267B007C4201 /* DirectivePayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A802F53267B007C4201 /* DirectivePayload.swift */; };
+		42312A832F53269F007C4201 /* IngestionTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A822F53269F007C4201 /* IngestionTerminalView.swift */; };
+		42312A852F5326FF007C4201 /* OperationsHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A842F5326FF007C4201 /* OperationsHubView.swift */; };
+		42312A872F532940007C4201 /* OperationalDirective.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A862F532940007C4201 /* OperationalDirective.swift */; };
+		42312A892F533229007C4201 /* testingdta.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42312A882F533220007C4201 /* testingdta.swift */; };
 		4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FC2F4DB52500B948FA /* GarageLogView.swift */; };
 		4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D2FE2F4DB65B00B948FA /* MissionControl.swift */; };
 		4233D3012F4DB68400B948FA /* OperationalBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3002F4DB68400B948FA /* OperationalBriefingView.swift */; };
@@ -30,7 +37,6 @@
 		4233D31B2F4DC9D600B948FA /* ColorTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D31A2F4DC9D600B948FA /* ColorTheme.swift */; };
 		4233D3212F4DD95000B948FA /* TelemetryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3202F4DD95000B948FA /* TelemetryComponents.swift */; };
 		4233D3252F4DDAB200B948FA /* TrainingProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3242F4DDAB200B948FA /* TrainingProtocols.swift */; };
-		4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3262F4DDAE600B948FA /* MissionCard.swift */; };
 		4233D32D2F4DDC5700B948FA /* PerformanceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D32C2F4DDC5700B948FA /* PerformanceEngine.swift */; };
 		4233D32F2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D32E2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift */; };
 		4233D3312F4DEBC000B948FA /* ReadinessMetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4233D3302F4DEBC000B948FA /* ReadinessMetricCard.swift */; };
@@ -38,7 +44,6 @@
 		42342F142F4F02F2005F1CD3 /* SystemAlertManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */; };
 		425C58722F4F0BF200EFBA4A /* hmPlan.csv in Resources */ = {isa = PBXBuildFile; fileRef = 425C58712F4F0BF200EFBA4A /* hmPlan.csv */; };
 		425C58742F4F0C2300EFBA4A /* CSVParserEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */; };
-		425C58762F4F0F3C00EFBA4A /* MacroCycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */; };
 		425C58782F4F13C300EFBA4A /* MissionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58772F4F13C000EFBA4A /* MissionDetailView.swift */; };
 		425C587A2F4F353400EFBA4A /* KineticSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425C58792F4F351E00EFBA4A /* KineticSession.swift */; };
 		425C587C2F4F6D4800EFBA4A /* roadmap.md in Resources */ = {isa = PBXBuildFile; fileRef = 425C587B2F4F6D3500EFBA4A /* roadmap.md */; };
@@ -90,6 +95,13 @@
 		42312A702F53073B007C4201 /* APIKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIKey.swift; sourceTree = "<group>"; };
 		42312A722F53074A007C4201 /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
 		42312A742F5307A2007C4201 /* GenerativeAI-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GenerativeAI-Info.plist"; sourceTree = "<group>"; };
+		42312A772F530F0E007C4201 /* DirectiveScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectiveScheduler.swift; sourceTree = "<group>"; };
+		42312A7D2F53262B007C4201 /* extract_format.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = extract_format.json; sourceTree = "<group>"; };
+		42312A802F53267B007C4201 /* DirectivePayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectivePayload.swift; sourceTree = "<group>"; };
+		42312A822F53269F007C4201 /* IngestionTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IngestionTerminalView.swift; sourceTree = "<group>"; };
+		42312A842F5326FF007C4201 /* OperationsHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationsHubView.swift; sourceTree = "<group>"; };
+		42312A862F532940007C4201 /* OperationalDirective.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationalDirective.swift; sourceTree = "<group>"; };
+		42312A882F533220007C4201 /* testingdta.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = testingdta.swift; sourceTree = "<group>"; };
 		4233D2FC2F4DB52500B948FA /* GarageLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GarageLogView.swift; sourceTree = "<group>"; };
 		4233D2FE2F4DB65B00B948FA /* MissionControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionControl.swift; sourceTree = "<group>"; };
 		4233D3002F4DB68400B948FA /* OperationalBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OperationalBriefingView.swift; sourceTree = "<group>"; };
@@ -106,7 +118,6 @@
 		4233D31A2F4DC9D600B948FA /* ColorTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorTheme.swift; sourceTree = "<group>"; };
 		4233D3202F4DD95000B948FA /* TelemetryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryComponents.swift; sourceTree = "<group>"; };
 		4233D3242F4DDAB200B948FA /* TrainingProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrainingProtocols.swift; sourceTree = "<group>"; };
-		4233D3262F4DDAE600B948FA /* MissionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionCard.swift; sourceTree = "<group>"; };
 		4233D32C2F4DDC5700B948FA /* PerformanceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceEngine.swift; sourceTree = "<group>"; };
 		4233D32E2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EfficiencyCoefficientCard.swift; sourceTree = "<group>"; };
 		4233D3302F4DEBC000B948FA /* ReadinessMetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessMetricCard.swift; sourceTree = "<group>"; };
@@ -114,7 +125,6 @@
 		42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemAlertManager.swift; sourceTree = "<group>"; };
 		425C58712F4F0BF200EFBA4A /* hmPlan.csv */ = {isa = PBXFileReference; lastKnownFileType = text; path = hmPlan.csv; sourceTree = "<group>"; };
 		425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserEngine.swift; sourceTree = "<group>"; };
-		425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroCycleView.swift; sourceTree = "<group>"; };
 		425C58772F4F13C000EFBA4A /* MissionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MissionDetailView.swift; sourceTree = "<group>"; };
 		425C58792F4F351E00EFBA4A /* KineticSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KineticSession.swift; sourceTree = "<group>"; };
 		425C587B2F4F6D3500EFBA4A /* roadmap.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = roadmap.md; sourceTree = "<group>"; };
@@ -185,6 +195,26 @@
 			path = Gemini;
 			sourceTree = "<group>";
 		};
+		42312A762F530F06007C4201 /* Directives */ = {
+			isa = PBXGroup;
+			children = (
+				42312A772F530F0E007C4201 /* DirectiveScheduler.swift */,
+			);
+			path = Directives;
+			sourceTree = "<group>";
+		};
+		42312A7F2F532661007C4201 /* WorkoutAutomation */ = {
+			isa = PBXGroup;
+			children = (
+				42312A882F533220007C4201 /* testingdta.swift */,
+				42312A862F532940007C4201 /* OperationalDirective.swift */,
+				42312A842F5326FF007C4201 /* OperationsHubView.swift */,
+				42312A822F53269F007C4201 /* IngestionTerminalView.swift */,
+				42312A802F53267B007C4201 /* DirectivePayload.swift */,
+			);
+			path = WorkoutAutomation;
+			sourceTree = "<group>";
+		};
 		4233D3102F4DC81100B948FA /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -205,7 +235,6 @@
 				4233D3132F4DC8D300B948FA /* PerrformanceConstants.swift */,
 				4233D3152F4DC98F00B948FA /* DashboardMenuButton.swift */,
 				4233D3172F4DC9A100B948FA /* MetricSlider.swift */,
-				4233D3262F4DDAE600B948FA /* MissionCard.swift */,
 				4233D32E2F4DDC7500B948FA /* EfficiencyCoefficientCard.swift */,
 				4233D3302F4DEBC000B948FA /* ReadinessMetricCard.swift */,
 			);
@@ -259,6 +288,9 @@
 		42B884D32F4C941A00A50290 /* DragsterOS */ = {
 			isa = PBXGroup;
 			children = (
+				42312A7F2F532661007C4201 /* WorkoutAutomation */,
+				42312A7D2F53262B007C4201 /* extract_format.json */,
+				42312A762F530F06007C4201 /* Directives */,
 				42312A6F2F53072E007C4201 /* Gemini */,
 				42169D202F522DDC00312CFD /* Views */,
 				42A738012F51E59300BAFC2A /* StrategicObjectivesView.swift */,
@@ -273,7 +305,6 @@
 				42D7085A2F503D8800DC1091 /* ObjectiveSetupSheet.swift */,
 				42D708562F5039A200DC1091 /* TACTICAL_OS_WRAPPER.swift */,
 				425C588F2F4F90C300EFBA4A /* AddPlannedActivitySheet.swift */,
-				425C58752F4F0F3600EFBA4A /* MacroCycleView.swift */,
 				425C58732F4F0C1F00EFBA4A /* CSVParserEngine.swift */,
 				42342F132F4F02EA005F1CD3 /* SystemAlertManager.swift */,
 				42FAD52E2F4EFAE80049BFEF /* DashboardView.swift */,
@@ -380,6 +411,7 @@
 				42B884E22F4C942100A50290 /* Preview Assets.xcassets in Resources */,
 				42FAD52B2F4EF8190049BFEF /* .gitignore in Resources */,
 				42B884DE2F4C942100A50290 /* Assets.xcassets in Resources */,
+				42312A7E2F53262B007C4201 /* extract_format.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -396,6 +428,7 @@
 				4233D30D2F4DC0B900B948FA /* ReadinessGauge.swift in Sources */,
 				42B884EF2F4CE28300A50290 /* HealthKitManager.swift in Sources */,
 				421567D82F51CA51001D54A9 /* ThermodynamicFuelWidget.swift in Sources */,
+				42312A892F533229007C4201 /* testingdta.swift in Sources */,
 				42D708632F5046DA00DC1091 /* LoadEngine.swift in Sources */,
 				42A738022F51E59300BAFC2A /* StrategicObjectivesView.swift in Sources */,
 				425C58822F4F716200EFBA4A /* ReadinessBatteryBar.swift in Sources */,
@@ -411,12 +444,14 @@
 				42D7085D2F503DA500DC1091 /* ObjectiveWidget.swift in Sources */,
 				421567D62F51CA40001D54A9 /* MacroTarget.swift in Sources */,
 				42D708572F5039AC00DC1091 /* TACTICAL_OS_WRAPPER.swift in Sources */,
+				42312A832F53269F007C4201 /* IngestionTerminalView.swift in Sources */,
 				4233D3092F4DBAC100B948FA /* PitStopView.swift in Sources */,
 				4233D2FD2F4DB52500B948FA /* GarageLogView.swift in Sources */,
-				425C58762F4F0F3C00EFBA4A /* MacroCycleView.swift in Sources */,
+				42312A812F53267B007C4201 /* DirectivePayload.swift in Sources */,
 				42D708552F50378E00DC1091 /* ChassisLog.swift in Sources */,
 				421567DA2F51D767001D54A9 /* FuelTierConfigurationSheet.swift in Sources */,
 				4233D3312F4DEBC000B948FA /* ReadinessMetricCard.swift in Sources */,
+				42312A782F530F0E007C4201 /* DirectiveScheduler.swift in Sources */,
 				42FAD52F2F4EFAEF0049BFEF /* DashboardView.swift in Sources */,
 				4233D3142F4DC8D300B948FA /* PerrformanceConstants.swift in Sources */,
 				42FAD52D2F4EF9450049BFEF /* TelemetryLog.swift in Sources */,
@@ -431,6 +466,7 @@
 				4233D3012F4DB68400B948FA /* OperationalBriefingView.swift in Sources */,
 				4233D3122F4DC87200B948FA /* MetricCard.swift in Sources */,
 				425C58802F4F713E00EFBA4A /* BiometricMiniCard.swift in Sources */,
+				42312A872F532940007C4201 /* OperationalDirective.swift in Sources */,
 				425C58842F4F719200EFBA4A /* ManualTelemetrySheet.swift in Sources */,
 				425C588A2F4F799800EFBA4A /* TelemetryChartCard.swift in Sources */,
 				426CBFCF2F5081B400559E41 /* SessionSummaryCard.swift in Sources */,
@@ -440,7 +476,6 @@
 				421567DC2F51E10D001D54A9 /* AddShoeSheet.swift in Sources */,
 				425C58882F4F751C00EFBA4A /* ReadinessTrendChart.swift in Sources */,
 				42312A712F53073B007C4201 /* APIKey.swift in Sources */,
-				4233D3272F4DDAE600B948FA /* MissionCard.swift in Sources */,
 				42D708612F50441900DC1091 /* MassEfficiencyView.swift in Sources */,
 				426CBFC12F50630700559E41 /* AIBriefingView.swift in Sources */,
 				42B884DC2F4C941A00A50290 /* ContentView.swift in Sources */,
@@ -451,6 +486,7 @@
 				4233D2FF2F4DB65B00B948FA /* MissionControl.swift in Sources */,
 				4233D3162F4DC98F00B948FA /* DashboardMenuButton.swift in Sources */,
 				4233D31B2F4DC9D600B948FA /* ColorTheme.swift in Sources */,
+				42312A852F5326FF007C4201 /* OperationsHubView.swift in Sources */,
 				42FAD5312F4EFD760049BFEF /* RunningShoe.swift in Sources */,
 				42342F122F4F022F005F1CD3 /* ChassisSnapshot.swift in Sources */,
 				42D708512F50372B00DC1091 /* OSHeader.swift in Sources */,
@@ -573,6 +609,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 			};
@@ -592,6 +629,8 @@
 				DEVELOPMENT_TEAM = BBE2254DK2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Dragster;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dragster OS needs to read your Engine Telemetry (Heart Rate) for calibration";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Dragster OS writes workout telemetry to your health profile.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -604,7 +643,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.7;
@@ -612,7 +651,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.specter.DragsterOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -633,6 +673,8 @@
 				DEVELOPMENT_TEAM = BBE2254DK2;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Dragster;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.sports";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Dragster OS needs to read your Engine Telemetry (Heart Rate) for calibration";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Dragster OS writes workout telemetry to your health profile.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -645,7 +687,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 12.7;
@@ -653,7 +695,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.specter.DragsterOS;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

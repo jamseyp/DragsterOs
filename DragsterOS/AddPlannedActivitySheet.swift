@@ -100,13 +100,8 @@ struct AddPlannedActivitySheet: View {
     // MARK: - ⚙️ LOGIC
     private func saveMission() {
         // ✨ FIXED: Saves to OperationalDirective, not PlannedMission
-        let newDirective = OperationalDirective(
-            date: date,
-            activity: title,
-            fuelTier: fuel,
-            targetLoad: plannedTSS,
-            isCompleted: false
-        )
+        let newDirective = OperationalDirective()
+        // adjust for new dataset.
         
         context.insert(newDirective)
         

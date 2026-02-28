@@ -136,7 +136,7 @@ struct AddSessionSheet: View {
         // ✨ MATCH TO TODAY'S MISSION
         let today = Calendar.current.startOfDay(for: .now)
         let matchedMission = allDirectives.first {
-            Calendar.current.startOfDay(for: $0.date) == today
+            Calendar.current.startOfDay(for: $0.assignedDate) == today
         }
         
         let newSession = KineticSession(

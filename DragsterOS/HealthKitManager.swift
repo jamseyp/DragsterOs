@@ -18,7 +18,7 @@ final class HealthKitManager {
             throw NSError(domain: "HealthKitManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available."])
         }
         
-        let readTypes: Set<HKObjectType> = [
+        var readTypes: Set<HKObjectType> = [
             HKObjectType.workoutType(),
             HKQuantityType(.heartRate),
             HKQuantityType(.distanceWalkingRunning),
@@ -53,6 +53,11 @@ final class HealthKitManager {
             HKQuantityType(.dietaryCarbohydrates),
             HKQuantityType(.dietaryFatTotal)
         ]
+        
+        // ✨ iOS 18 TRUE RPE (EFFORT SCORE) AUTHORIZATION
+        if #available(iOS 18.0, *) {
+            readTypes.insert(HKQuantityType(.estimatedWorkoutEffortScore))
+        }
         
         let writeTypes: Set<HKSampleType> = [
             HKObjectType.workoutType(),
@@ -184,6 +189,33 @@ extension HealthKitManager {
             }
             healthStore.execute(query)
         }
+    }
+    
+    // ✨ NEW: TRUE RPE (EFFORT SCORE)
+    func fetchTrueRPE(for workout: HKWorkout) async -> Double {
+        if #available(iOS 18.0, *) {
+            if let effortType = HKQuantityType.quantityType(forIdentifier: .estimatedWorkoutEffortScore) {
+                
+                // First, check if the score is bundled directly in the workout statistics
+                if let stat = workout.statistics(for: effortType),
+                   let quantity = stat.averageQuantity() ?? stat.mostRecentQuantity() {
+                    return quantity.doubleValue(for: .count())
+                }
+                
+                // Fallback: Query the HealthStore for it
+                let predicate = HKQuery.predicateForObjects(from: workout)
+                return await withCheckedContinuation { continuation in
+                    let query = HKStatisticsQuery(quantityType: effortType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, _ in
+                        let rpe = result?.averageQuantity()?.doubleValue(for: .count()) ?? result?.mostRecentQuantity()?.doubleValue(for: .count()) ?? 0.0
+                        continuation.resume(returning: rpe)
+                    }
+                    healthStore.execute(query)
+                }
+            }
+        }
+        
+        // Final fallback for manual entries or pre-iOS 18
+        return workout.metadata?["CustomRPE"] as? Double ?? 0.0
     }
     
     func fetchAveragePower(for workout: HKWorkout, isRide: Bool) async -> Double {

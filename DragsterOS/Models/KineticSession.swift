@@ -109,8 +109,8 @@ extension KineticSession {
         let secs = Int((pace - Double(mins)) * 60)
         let paceString = distanceKM > 0 ? String(format: "%d:%02d/km", mins, secs) : "N/A"
         
-        let missionTitle = mission?.activity ?? "FREE RUN (NO DIRECTIVE)"
-        let missionGoal = mission?.powerTarget ?? "N/A"
+        let missionTitle = mission?.missionTitle ?? "FREE RUN (NO DIRECTIVE)"
+        let missionGoal = mission?.missionNotes
         let ef = (avgPower != nil && averageHR > 0) ? String(format: "%.2f", avgPower! / averageHR) : "N/A"
         
         return """

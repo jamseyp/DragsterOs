@@ -8,7 +8,7 @@ struct AIBriefingView: View {
     // 🗄️ DATA STREAMS
     @Query(sort: \TelemetryLog.date, order: .reverse) private var logs: [TelemetryLog]
     @Query(sort: \KineticSession.date, order: .reverse) private var sessions: [KineticSession]
-    @Query(sort: \OperationalDirective.date, order: .forward) private var missions: [OperationalDirective]
+    @Query(sort: \OperationalDirective.assignedDate, order: .forward) private var missions: [OperationalDirective]
     
     // ✨ NEW STREAMS: Registry and Objectives
     @Query private var registries: [UserRegistry]
@@ -36,7 +36,7 @@ struct AIBriefingView: View {
     
     private var todayMission: OperationalDirective? {
         let startOfDay = Calendar.current.startOfDay(for: .now)
-        return missions.first { Calendar.current.isDate($0.date, inSameDayAs: startOfDay) }
+        return missions.first { Calendar.current.isDate($0.assignedDate, inSameDayAs: startOfDay) }
     }
     
     private var dynamicCommandStatus: String {
@@ -118,7 +118,7 @@ struct AIBriefingView: View {
         let activeObjective = fetchedObjectives.first(where: { !$0.isCompleted })
         let objectiveString = activeObjective != nil ? "\(activeObjective!.eventName) in \(activeObjective!.location) on \(activeObjective!.targetDate.formatted(date: .abbreviated, time: .omitted)) (Target Pace: \(activeObjective!.targetPace), Target Power: \(activeObjective!.targetPower)W)" : "Maintain Base Fitness"
         
-        let missionContext = todayMission != nil ? "Activity: \(todayMission!.activity)\nTarget TSS: \(Int(todayMission!.targetLoad))\nFuel Tier: \(todayMission!.fuelTier)\nCoach Notes: \(todayMission!.coachNotes)" : "No directive scheduled for today. Focus on dopamine-safe, active recovery."
+        let missionContext = todayMission != nil ? "Activity: \(todayMission!.missionTitle)\nTarget TSS: \(Int(todayMission!.targetLoad))\nFuel Tier: \(todayMission!.fuelTier)\nCoach Notes: \(todayMission!.coachNotes)" : "No directive scheduled for today. Focus on dopamine-safe, active recovery."
         
         // ✨ INJECTED: Updated Header and Request for HYBRID EVOLUTION v3
         let header = "[System: Dragster OS - Telemetry Feed]\nStrategic Objective: \(objectiveString)\nCommand System Assessment: \(dynamicCommandStatus)\n\n"
@@ -186,7 +186,7 @@ struct AIBriefingView: View {
                             
                             Divider().background(ColorTheme.surfaceBorder)
                             
-                            DossierRow(label: "Today's Mission", value: todayMission?.activity ?? "Rest Day", color: ColorTheme.prime)
+                            DossierRow(label: "Today's Mission", value: todayMission?.missionTitle ?? "Rest Day", color: ColorTheme.prime)
                             
                             if let mission = todayMission {
                                 HStack(spacing: 16) {
