@@ -73,7 +73,7 @@ struct RegistrySettingsView: View {
                             HStack {
                                 Text("Bike FTP (Watts)")
                                 Spacer()
-                                TextField("250", value: Bindable(registry).functionalThresholdPower, format: .number)
+                                TextField("250", value: Bindable(registry).ftp, format: .number)
                                     .keyboardType(.numberPad).multilineTextAlignment(.trailing).foregroundStyle(ColorTheme.prime)
                             }
                             HStack {

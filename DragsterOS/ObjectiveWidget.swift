@@ -84,7 +84,7 @@ struct ObjectiveWidget: View {
             }
         }
         .sheet(isPresented: $showingSetup) {
-            ObjectiveSetupSheet()
+            ObjectiveSetupSheet { _ in }
         }
     }
 }

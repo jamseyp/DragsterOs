@@ -1,9 +1,9 @@
 import SwiftUI
 import SwiftData
 
-struct ChassisLogView: View {
+struct PhysiologyDashboardView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \ChassisLog.date, order: .reverse) private var chassisHistory: [ChassisLog]
+    @Query(sort: \BodyMeasurementLog.date, order: .reverse) private var chassisHistory: [BodyMeasurementLog]
     
     @State private var showingEntrySheet = false
     
@@ -69,11 +69,11 @@ struct ChassisLogView: View {
         }
         .applyTacticalOS(title: "CHASSIS & EFFICIENCY")
         .sheet(isPresented: $showingEntrySheet) {
-            HardwareScanSheet()
+            //HardwareScanSheet()
         }
     }
     
-    private func deleteLog(_ log: ChassisLog) {
+    private func deleteLog(_ log: BodyMeasurementLog) {
         context.delete(log)
         try? context.save()
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
@@ -82,7 +82,7 @@ struct ChassisLogView: View {
 
 // ✨ REFACTOR: Extracted Row Component for cleaner deletion logic
 struct ChassisHistoryRow: View {
-    let log: ChassisLog
+    let log: BodyMeasurementLog
     
     var body: some View {
         HStack {

@@ -585,6 +585,9 @@ extension HealthKitManager {
 // MARK: - 🔬 ADVANCED RECOVERY FETCHERS
 extension HealthKitManager {
     
+    
+    
+    
     /// Returns the exact heart rate drop (in BPM) 60 seconds post-workout
     func fetchLatestHeartRateRecovery() async -> Double {
         guard let type = HKObjectType.quantityType(forIdentifier: .heartRateRecoveryOneMinute) else { return 0.0 }
@@ -669,5 +672,77 @@ extension HealthKitManager {
             print("❌ Sleep Architecture Fetch Fault: \(error)")
             return (0, 0, 0)
         }
+    }
+}
+
+// MARK: - 🏃‍♂️ TRAINING ENGINE BRIDGE
+extension HealthKitManager {
+    
+    /// Errors specific to the boundary layer between HealthKit and the deterministic Training Engine.
+    enum EngineBridgeError: Error, LocalizedError {
+        case healthDataUnavailable
+        case dateCalculationFailed
+        
+        var errorDescription: String? {
+            switch self {
+            case .healthDataUnavailable: return "Apple Health is not accessible."
+            case .dateCalculationFailed: return "Failed to calculate the rolling 28-day window."
+            }
+        }
+    }
+    
+    /// Scans the trailing 28 days of Apple Health data exclusively for Running workouts,
+    /// normalizes the distances, and returns the mathematically pure 4-week average in Kilometers.
+    /// - Parameter currentDate: Injected for testability (defaults to .now)
+    /// - Returns: Weekly average distance in Kilometers
+    func calculateFourWeekBaselineMileage(asOf currentDate: Date = .now) async throws -> Double {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw EngineBridgeError.healthDataUnavailable
+        }
+        
+        // 1. Define the exact 28-day kinetic window
+        guard let startDate = Calendar.current.date(byAdding: .day, value: -28, to: currentDate) else {
+            throw EngineBridgeError.dateCalculationFailed
+        }
+        
+        let workoutType = HKObjectType.workoutType()
+        let runningPredicate = HKQuery.predicateForWorkouts(with: .running)
+        let datePredicate = HKQuery.predicateForSamples(withStart: startDate, end: currentDate, options: .strictStartDate)
+        let compoundPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [runningPredicate, datePredicate])
+        
+        // 2. Await the payload
+        let workouts = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[HKWorkout], Error>) in
+            let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+            
+            let query = HKSampleQuery(sampleType: workoutType, predicate: compoundPredicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { _, samples, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                guard let workouts = samples as? [HKWorkout] else {
+                    continuation.resume(returning: [])
+                    return
+                }
+                
+                continuation.resume(returning: workouts)
+            }
+            self.healthStore.execute(query)
+        }
+        
+        // 3. ✨ THE POLISH: Functional extraction to SI Units (Kilometers)
+        // We filter out any runs with zero distance to prevent mathematical skewing
+        let totalDistanceMeters = workouts.compactMap { workout -> Double? in
+            guard let distance = workout.totalDistance?.doubleValue(for: .meter()), distance > 0 else {
+                return nil
+            }
+            return distance
+        }.reduce(0.0, +)
+        
+        // 4. Return pure mathematics
+        let totalDistanceKilometers = totalDistanceMeters / 1000.0
+        let weeklyAverageKilometers = totalDistanceKilometers / 4.0
+        
+        return weeklyAverageKilometers
     }
 }

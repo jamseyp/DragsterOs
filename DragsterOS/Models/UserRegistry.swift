@@ -13,7 +13,7 @@ final class UserRegistry {
     var vo2Max: Double // Replaced Lactate Threshold
     
     // ⚡️ POWER / PERFORMANCE
-    var functionalThresholdPower: Int
+    var ftp: Int
     var targetRacePaceSeconds: Int
     
     // 🧪 HR ZONES
@@ -26,6 +26,10 @@ final class UserRegistry {
     var manualTDEE: Int
     var isTDEEOverridden: Bool
     
+    // ✨ THE SKELETON STORAGE
+        var hybridSkeletonData: Data?
+    
+    
     // 🧠 COMPUTED TDEE
     // Dynamically calculates baseline energy needs unless explicitly overridden
     var effectiveTDEE: Int {
@@ -34,6 +38,7 @@ final class UserRegistry {
         return Int(targetWeight * 35.0)
     }
     
+
     init(
         targetWeight: Double = 75.0,
         restingHR: Int = 50,
@@ -46,13 +51,14 @@ final class UserRegistry {
         z3: Int = 160,
         z4: Int = 175,
         manualTDEE: Int = 2600,
-        isTDEEOverridden: Bool = false
+        isTDEEOverridden: Bool = false,
+        hybridSkeletonData: Data? = nil
     ) {
         self.targetWeight = targetWeight
         self.restingHR = restingHR
         self.maxHR = maxHR
         self.vo2Max = vo2Max
-        self.functionalThresholdPower = ftp
+        self.ftp = ftp
         self.targetRacePaceSeconds = targetRacePaceSeconds
         self.zone1Max = z1
         self.zone2Max = z2
@@ -60,5 +66,15 @@ final class UserRegistry {
         self.zone4Max = z4
         self.manualTDEE = manualTDEE
         self.isTDEEOverridden = isTDEEOverridden
+        self.hybridSkeletonData = hybridSkeletonData
+        
     }
+    // Helper to easily grab the decoded skeleton
+        @Transient var decodedSkeleton: [Int: [BlueprintSlot]] {
+            guard let data = hybridSkeletonData,
+                  let skeleton = try? JSONDecoder().decode([Int: [BlueprintSlot]].self, from: data) else {
+                return [:] // Returns empty if none exists
+            }
+            return skeleton
+        }
 }

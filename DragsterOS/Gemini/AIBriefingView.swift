@@ -72,7 +72,7 @@ struct AIBriefingView: View {
                 "vo2_max": registry.vo2Max,
                 "z2_aerobic_limit_bpm": registry.zone2Max,
                 "z4_threshold_limit_bpm": registry.zone4Max,
-                "ftp_watts": registry.functionalThresholdPower,
+                "ftp_watts": registry.ftp,
                 "target_tdee_kcal": registry.effectiveTDEE,
                 "protein_floor_g": 215 // ✨ INJECTED: Mandatory macro floor
             ],

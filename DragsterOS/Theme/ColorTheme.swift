@@ -58,6 +58,31 @@ struct ColorTheme {
     static let warningOrange = Color.orange
     static let accentNeon = dynamicColor(light: UIColor(red: 0.0, green: 0.7, blue: 0.2, alpha: 1.0), dark: UIColor(red: 0.2, green: 1.0, blue: 0.4, alpha: 1.0))
     
+
+    
+    struct disciplineTheme{
+        static func color(discipline: String)-> Color{
+            switch discipline{
+            case "RUN": return .cyan
+            case "ROW": return .blue
+            case "SPIN": return .yellow
+            case "STRENGTH": return .purple
+            default: return .gray
+                
+            }
+        }
+        static func icon(discipline: String)-> String{
+            switch discipline {
+            case "RUN": return "figure.run"
+            case "ROW": return "figure.rower"
+            case "SPIN": return "figure.indoor.cycle"
+            case "STRENGTH": return "dumbbell.fill"
+            default: return "bolt.fill"
+                
+            }
+        }
+    }
+    
     // MARK: - 📐 Typography Engine
     
     struct Typography {

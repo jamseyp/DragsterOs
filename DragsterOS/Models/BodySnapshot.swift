@@ -1,25 +1,34 @@
 import Foundation
 import SwiftData
 
-// 📐 ARCHITECTURE: A macro-level snapshot of the athlete's structural and kinetic evolution.
-// Kept separate from daily logs to efficiently track month-over-month progress.
-
+/// A macro-level assessment of the athlete's structural geometry and power capabilities.
+/// Designed for month-over-month evolutionary tracking.
 @Model
-final class ChassisSnapshot {
+final class BodySnapshot {
     @Attribute(.unique) var id: UUID
+    
+    /// The date the structural baseline was measured.
     var date: Date
+    
+    /// Total body mass in kilograms.
     var weightKG: Double
+    
+    /// The maximum instantaneous wattage the athlete can generate.
     var peakPowerWatts: Double
+    
+    /// Circumference of the left limb in centimeters.
     var leftLegCM: Double
+    
+    /// Circumference of the right limb in centimeters.
     var rightLegCM: Double
     
-    // ✨ THE POLISH: A computed transient property for the ultimate efficiency metric
+    /// The pinnacle metric for running economy and cycling performance (W/kg).
     @Transient var powerToWeightRatio: Double {
         guard weightKG > 0 else { return 0.0 }
         return peakPowerWatts / weightKG
     }
     
-    // Computed property to determine if symmetry is optimal (within 1cm)
+    /// Evaluates structural symmetry. Imbalances > 1.0cm heavily correlate with injury risk.
     @Transient var isSymmetrical: Bool {
         return abs(leftLegCM - rightLegCM) <= 1.0
     }

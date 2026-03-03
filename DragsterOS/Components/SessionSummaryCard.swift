@@ -16,19 +16,19 @@ struct SessionSummaryCard: View {
     var body: some View {
         HStack(spacing: 16) {
             VStack {
-                Image(systemName: session.disciplineIcon)
+                Image(systemName: ColorTheme.disciplineTheme.icon(discipline: session.discipline))
                     .font(.system(size: 20))
                     .foregroundStyle(ColorTheme.background)
             }
             .frame(width: 50, height: 50)
-            .background(session.disciplineColor)
+            .background(ColorTheme.disciplineTheme.color(discipline: session.discipline))
             .clipShape(RoundedRectangle(cornerRadius: 12))
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text(session.discipline)
                         .font(.system(size: 14, weight: .black, design: .monospaced))
-                        .foregroundStyle(session.disciplineColor)
+                        .foregroundStyle(ColorTheme.disciplineTheme.color(discipline: session.discipline))
                     Spacer()
                     Text(session.date, format: .dateTime.month().day())
                         .font(.system(size: 12, weight: .bold, design: .monospaced))

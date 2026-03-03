@@ -1,12 +1,17 @@
 import Foundation
-import SwiftData
 
+/// A deterministic service that fuses Central Nervous System (CNS) telemetry
+/// with mechanical fatigue data (TSB) to compute a high-fidelity readiness score.
 struct ReadinessEngine {
     
     /// Computes the ultimate 0-100 Readiness Score tailored for a high-performance athlete.
-    /// Prioritizes Elite HRV (RMSSD) and penalizes generic Apple Health (SDNN) noise.
+    /// - Parameters:
+    ///   - todayLog: The telemetry captured this morning.
+    ///   - history: The biological baseline history.
+    ///   - loadProfile: The mechanical strain computed by the `LoadEngine`.
+    /// - Returns: A readiness score from 0.0 (Severe Fatigue) to 100.0 (Prime).
     static func computeReadiness(
-        todayLog: TelemetryLog, // Pass the whole log to access RMSSD and Elite scores
+        todayLog: TelemetryLog,
         history: [TelemetryLog],
         loadProfile: LoadEngine.LoadProfile
     ) -> Double {
@@ -14,22 +19,16 @@ struct ReadinessEngine {
         // ---------------------------------------------------------
         // 1. THE "ELITE" MASTER OVERRIDE
         // ---------------------------------------------------------
-        // If the Commander took a controlled Elite HRV reading today, we trust the biological
-        // readiness from that app above our own internal math.
         var biologicalScore: Double = 0.0
         
         if let elite = todayLog.eliteReadiness, elite > 0 {
-            // Convert 1-10 to 10-100 scale if necessary, assuming it might be stored as 1-10
             biologicalScore = elite <= 10 ? Double(elite * 10) : Double(elite)
         } else {
             
             // ---------------------------------------------------------
-            // 2. BIOLOGICAL BASELINES (The "Signal vs Noise" Filter)
+            // 2. BIOLOGICAL BASELINES (Signal vs Noise Filter)
             // ---------------------------------------------------------
-            // Extract RMSSD first. If unavailable, fallback to HRV (SDNN) but note it's lower fidelity.
             let validRMSSDs = history.compactMap { $0.rmssd }.filter { $0 > 0 }
-            
-            // We use today's RMSSD if available, otherwise fallback to the generic HRV
             let todayRecoveryMetric = todayLog.rmssd ?? todayLog.hrv
             
             let baselineMetric: Double
@@ -49,24 +48,19 @@ struct ReadinessEngine {
             // ---------------------------------------------------------
             // 3. SURGICAL BIOLOGICAL SCORING
             // ---------------------------------------------------------
-            
-            // HRV/RMSSD Penalty Curve: Drops below baseline are severely penalized.
             let hrvRatio = baselineMetric > 0 ? (todayRecoveryMetric / baselineMetric) : 1.0
-            // If ratio is 0.8 (20% drop), math becomes: 100 - ((1.0 - 0.8) * 200) = 60/100
             let hrvScore = hrvRatio >= 1.0 ? 100.0 : max(0.0, 100.0 - ((1.0 - hrvRatio) * 200.0))
             
-            // RHR: Invert ratio. Higher RHR means engine is running hot.
             let rhrRatio = todayLog.restingHR > 0 ? (baselineRHR / todayLog.restingHR) : 1.0
             let rhrScore = min(100.0, max(0.0, rhrRatio * 100.0))
             
-            // Sleep
             let sleepTarget = max(8.0, baselineSleep)
             let sleepRatio = todayLog.sleepDuration / sleepTarget
             let sleepScore = min(100.0, max(0.0, sleepRatio * 100.0))
             
-            // Apply Noise Penalty: If we are forced to use Apple Health SDNN, cap the bio score at 85
-            // to prevent false "Peak" readings from background noise.
             let rawBioScore = (hrvScore * 0.5) + (rhrScore * 0.3) + (sleepScore * 0.2)
+            
+            // Apple Health SDNN penalty: Cap at 85 if we lack true RMSSD
             biologicalScore = (todayLog.rmssd != nil) ? rawBioScore : min(85.0, rawBioScore)
         }
         
@@ -77,14 +71,11 @@ struct ReadinessEngine {
         var mechanicalScore: Double = 0.0
         
         if tsb >= -15 && tsb <= 15 {
-            // Race Ready / Taper Sweet Spot
             mechanicalScore = 100.0
         } else if tsb > 15 {
-            // Detraining (Losing fitness)
             mechanicalScore = max(0.0, 100.0 - ((tsb - 15.0) * 2.0))
         } else {
-            // Heavy Fatigue / Overreaching (TSB < -15)
-            mechanicalScore = max(0.0, 100.0 + (tsb * 2.0)) // tsb is negative here
+            mechanicalScore = max(0.0, 100.0 + (tsb * 2.0))
         }
         
         // ---------------------------------------------------------
@@ -94,11 +85,10 @@ struct ReadinessEngine {
             return biologicalScore
         }
         
-        // Elite Biological data heavily dictates readiness. Mechanical is context.
         return (biologicalScore * 0.7) + (mechanicalScore * 0.3)
     }
     
-    /// Evaluates the final readiness score to determine if a CNS Override is required.
+    /// Flags severe systemic fatigue requiring an immediate training halt.
     static func requiresOverride(readiness: Double) -> Bool {
         return readiness < 40.0
     }

@@ -46,7 +46,7 @@ struct ContentView: View {
             // ⚡️ TAB 2: KINETICS (Historical Garage Log)
             // ---------------------------------------------------------
             NavigationStack {
-                GarageLogView()
+                ActivityLogView()
             }
             .tabItem {
                 Label("KINETICS", systemImage: "bolt.fill")
@@ -109,7 +109,7 @@ struct ContentView: View {
             }
             
             // 2. Calculate Current Mechanical Load Profile (ATL/CTL)
-            let currentLoadProfile = LoadEngine.computeCurrentLoad(history: sessions)
+            let currentLoadProfile = LoadEngine.computeLoad(history: sessions, upTo: .now)
             
             // 3. Historical Backfill (If less than 2 logs exist)
             if logs.count < 2 {
@@ -239,9 +239,13 @@ struct DashboardTab: View {
                 )
                 .padding(.horizontal)
                 
+                ReadinessBatteryBar(score: readiness)
+                    .padding(.horizontal)
+                
                 // .3 Energy Balance
                 EnergyBalanceWidget()
                     .padding(.horizontal)
+                
                 
                 // 3. Visual 7-Day Readiness
                 ReadinessTrendChart(logs: logs)
@@ -277,7 +281,7 @@ struct DashboardTab: View {
                         }
                     }
                     
-                    ReadinessBatteryBar(score: readiness)
+                    
                 }
                 .padding(.horizontal)
                 
@@ -304,9 +308,7 @@ struct StrategyHubTab: View {
                 NavigationLink(destination: OperationsHubView()) {
                     DashboardMenuButton(title: "Training Plan", icon: "calendar.badge.clock", color: .purple)
                 }
-                
-                
-                
+
                 NavigationLink(destination: StrategicObjectivesView()) {
                     DashboardMenuButton(title: "Goals", icon: "scope", color: ColorTheme.critical)
                 }
@@ -315,13 +317,13 @@ struct StrategyHubTab: View {
                     DashboardMenuButton(title: "Shoes", icon: "shoe.2.fill", color: ColorTheme.caution)
                 }
                 
-                NavigationLink(destination: ChassisCommandView()) {
+                NavigationLink(destination: BiometricBaselineView()) {
                     DashboardMenuButton(title: "Body Measurements & Peak Power", icon: "gauge.with.needle.fill", color: ColorTheme.optimal)
                 }
             }
             .padding(.horizontal)
         }
-        .applyTacticalOS(title: "STRATEGY COMMAND", showBack: false)
+        .applyTacticalOS(title: "Strategy", showBack: false)
     }
 }
 
@@ -340,15 +342,15 @@ struct IntelligenceHubTab: View {
                     .padding(.top, 20)
                 
                 NavigationLink(destination: OperationalBriefingView()) {
-                    DashboardMenuButton(title: "TACTICAL BRIEFING", icon: "list.clipboard.fill", color: ColorTheme.prime)
+                    DashboardMenuButton(title: "Daily Briefing", icon: "list.clipboard.fill", color: ColorTheme.prime)
                 }
                 
                 NavigationLink(destination: AIBriefingView()) {
-                    DashboardMenuButton(title: "GEMINI INTELLIGENCE", icon: "cpu", color: .cyan)
+                    DashboardMenuButton(title: "Gemini Inteligence", icon: "cpu", color: .cyan)
                 }
                 
                 NavigationLink(destination: BiometricBaselineView()) {
-                    DashboardMenuButton(title: "SYSTEM BASELINES", icon: "waveform.path.ecg", color: .green)
+                    DashboardMenuButton(title: "Biometric Baseline", icon: "waveform.path.ecg", color: .green)
                 }
             }
             .padding(.horizontal)
@@ -361,7 +363,7 @@ struct IntelligenceHubTab: View {
                     .padding(.vertical, 40)
             }
         }
-        .applyTacticalOS(title: "INTELLIGENCE", showBack: false)
+        .applyTacticalOS(title: "Physiologal Infomation", showBack: false)
     }
     
     // Core Data purge logic
@@ -371,7 +373,7 @@ struct IntelligenceHubTab: View {
             try context.delete(model: KineticSession.self)
             try context.delete(model: OperationalDirective.self)
             try context.delete(model: StrategicObjective.self)
-            try context.delete(model: ChassisLog.self)
+            try context.delete(model: BodyMeasurementLog.self)
             try context.delete(model: RunningShoe.self)
             try context.save()
             UINotificationFeedbackGenerator().notificationOccurred(.success)

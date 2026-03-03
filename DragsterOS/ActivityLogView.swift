@@ -3,7 +3,7 @@ import SwiftData
 
 // MARK: - 🗺️ OPERATIONAL LOGBOOK (V1.2)
 /// A grouped, filterable timeline of all historical kinetic sessions.
-struct GarageLogView: View {
+struct ActivityLogView: View {
     
     // MARK: - 🗄️ PERSISTENCE
     @Environment(\.modelContext) private var context

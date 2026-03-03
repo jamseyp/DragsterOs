@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class ChassisLog {
+final class BodyMeasurementLog {
     var date: Date
     var bodyMass: Double
     var leftThighCirc: Double // cm

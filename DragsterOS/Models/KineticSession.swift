@@ -2,56 +2,62 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-// MARK: - 📐 KINETIC SESSION MODEL
+/// A discrete physical training event.
+/// Captures cardiovascular strain, biomechanical efficiency, and mechanical load.
 @Model
 final class KineticSession {
+    /// The immutable cryptographic identifier for the session.
     @Attribute(.unique) var id: UUID
+    
+    /// The timestamp of the workout execution.
     var date: Date
+    
+    /// The modality of the training (e.g., "RUN", "SPIN").
     var discipline: String
+    
+    /// Total duration of active movement.
     var durationMinutes: Double
+    
+    /// Total distance covered.
     var distanceKM: Double
+    
+    /// The mean cardiovascular response to the mechanical load.
     var averageHR: Double
+    
+    /// Rate of Perceived Exertion (1-10 scale).
     var rpe: Int
+    
+    /// Qualitative feedback and environmental context from the athlete.
     var coachNotes: String
     
-    // TELEMETRY
+    // MARK: - Biomechanics & Telemetry
+    
+    /// The stride or pedal rate per minute.
     var avgCadence: Double?
+    
+    /// The absolute mechanical work generated, measured in Watts.
     var avgPower: Double?
+    
+    /// The specific footwear utilized, critical for tracking structural degradation.
     var shoeName: String?
     
-    // ADVANCED BIOMECHANICS
+    /// Time spent on the ground per step in milliseconds (Lower is more efficient).
     var groundContactTime: Double?
+    
+    /// The vertical displacement of the torso in centimeters.
     var verticalOscillation: Double?
+    
+    /// Total positive elevation change in meters.
     var elevationGain: Double?
     
-    // ✨ THE MISSING LINK TO THE TRAINING PLAN
+    // MARK: - Architecture & Linking
+    
+    /// The foreign key linking this executed session to a planned architectural directive.
     var linkedDirectiveID: UUID?
     
-    // Add this to your KineticSession class properties
+    /// Flags whether this data has been reconciled with hardware inventory.
     var isSyncedToEquipment: Bool = false
     
-    // MARK: - 🎨 UI COMPUTED PROPERTIES
-    @Transient var disciplineColor: Color {
-        switch discipline {
-        case "RUN": return .cyan
-        case "ROW": return .blue
-        case "SPIN": return .yellow
-        case "STRENGTH": return .purple
-        default: return .gray
-        }
-    }
-    
-    @Transient var disciplineIcon: String {
-        switch discipline {
-        case "RUN": return "figure.run"
-        case "ROW": return "figure.rower"
-        case "SPIN": return "figure.indoor.cycle"
-        case "STRENGTH": return "dumbbell.fill"
-        default: return "bolt.fill"
-        }
-    }
-    
-    // MARK: - 🛠️ INITIALIZER
     init(
         date: Date = .now,
         discipline: String,
@@ -66,7 +72,7 @@ final class KineticSession {
         groundContactTime: Double? = nil,
         verticalOscillation: Double? = nil,
         elevationGain: Double? = nil,
-        linkedDirectiveID: UUID? = nil // ✨ NOW THE COMPILER KNOWS IT EXISTS
+        linkedDirectiveID: UUID? = nil
     ) {
         self.id = UUID()
         self.date = date
@@ -82,10 +88,12 @@ final class KineticSession {
         self.groundContactTime = groundContactTime
         self.verticalOscillation = verticalOscillation
         self.elevationGain = elevationGain
-        self.linkedDirectiveID = linkedDirectiveID // ✨ SAVED TO DATABASE
+        self.linkedDirectiveID = linkedDirectiveID
     }
     
-    // MARK: - 🧠 MECHANICAL LOAD CALCULATOR (TSS)
+    // MARK: - 🧠 Physiological Load Calculator
+    
+    /// Training Stress Score (TSS). A deterministic calculation of systemic strain.
     @Transient
     var trainingStressScore: Double {
         let assumedFTP = 250.0
@@ -97,60 +105,5 @@ final class KineticSession {
             let rpeFactor = pow(Double(rpe) / 10.0, 2)
             return rpeFactor * durationMinutes * (100.0 / 60.0)
         }
-    }
-}
-
-// MARK: - 🤖 AI COACH TRANSLATION
-extension KineticSession {
-    // ✨ FIXED THE "PLAN" SCOPE ERROR: Now explicitly uses 'mission'
-    func generateFullTacticalExcerpt(readiness: Int?, mission: OperationalDirective?) -> String {
-        let pace = durationMinutes / (distanceKM > 0 ? distanceKM : 1.0)
-        let mins = Int(pace)
-        let secs = Int((pace - Double(mins)) * 60)
-        let paceString = distanceKM > 0 ? String(format: "%d:%02d/km", mins, secs) : "N/A"
-        
-        let missionTitle = mission?.missionTitle ?? "FREE RUN (NO DIRECTIVE)"
-        let missionGoal = mission?.missionNotes
-        let ef = (avgPower != nil && averageHR > 0) ? String(format: "%.2f", avgPower! / averageHR) : "N/A"
-        
-        return """
-        🏎️ DRAGSTER OS: FULL SPECTRUM DEBRIEF
-        ---
-        SESSION: \(discipline) | \(date.formatted(date: .abbreviated, time: .shortened))
-        
-        [TACTICAL COMPLIANCE]
-        - ASSIGNED MISSION: \(missionTitle)
-        - STATED GOAL: \(missionGoal)
-        
-        [BIOLOGICAL CONTEXT]
-        - MORNING READINESS: \(readiness != nil ? "\(readiness!)/100" : "DATA UNMAPPED")
-        - SUBJECTIVE RPE: \(rpe)/10
-        
-        [KINETIC TELEMETRY]
-        - DISTANCE: \(String(format: "%.2f", distanceKM)) KM
-        - DURATION: \(Int(durationMinutes)) MIN
-        - AVG PACE: \(paceString)
-        - AVG POWER: \(avgPower != nil ? "\(Int(avgPower!))W" : "N/A")
-        - AVG CADENCE: \(avgCadence != nil ? "\(Int(avgCadence!)) SPM" : "N/A")
-        
-        [ADVANCED BIOMECHANICS]
-        - GCT: \(groundContactTime != nil ? "\(Int(groundContactTime!)) ms" : "N/A")
-        - OSCILLATION: \(verticalOscillation != nil ? String(format: "%.1f cm", verticalOscillation!) : "N/A")
-        - ELEVATION GAIN: \(elevationGain != nil ? "\(Int(elevationGain!)) m" : "N/A")
-        
-        [STRUCTURAL LOAD]
-        - AVG HEART RATE: \(Int(averageHR)) BPM
-        - BIO-KINETIC RATIO (EF): \(ef) W/bpm
-        
-        [ATHLETE NOTES]
-        "\(coachNotes.isEmpty ? "None." : coachNotes)"
-        
-        ---
-        INSTRUCTION TO AI COACH: 
-        Perform a Bio-Kinetic Diagnostic for the current training phase (10k/HM).
-        1. DIRECTIVE COMPLIANCE: Compare this session against the [TACTICAL COMPLIANCE] block. Did the athlete execute the prescribed intensity, or was there "Executive Over-reach"?
-        2. ENGINE EFFICIENCY: Analyze the Efficiency Factor (EF: Power/HR). Is the cardiovascular engine becoming more economical at this specific intensity?
-        3. MECHANICAL DURABILITY: Evaluate GCT and Oscillation. Identify any "wattage leaks" or structural breakdown indicative of fatigue for a 95kg chassis.
-        """
     }
 }

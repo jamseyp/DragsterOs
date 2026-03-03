@@ -114,7 +114,7 @@ struct ManualTelemetrySheet: View {
     
     private func saveManualData() {
         // ✨ CALCULATE CURRENT LOAD PROFILE FOR THE ENGINE
-        let currentLoad = LoadEngine.computeCurrentLoad(history: sessions)
+        let currentLoad = LoadEngine.computeLoad(history: sessions, upTo: .now)
         
         if let current = log {
             // Standard Vitals

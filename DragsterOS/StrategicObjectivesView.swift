@@ -6,22 +6,27 @@ struct StrategicObjectivesView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     
-    // Fetch objectives from SwiftData, sorting purely by date
+    // Fetch objectives and user registry (for engine calibration)
     @Query(sort: \StrategicObjective.targetDate, order: .forward) private var fetchedObjectives: [StrategicObjective]
-        
-    // 🧠 Tactical Memory Sort: Prioritizes active targets, then chronologically
+    @Query private var registries: [UserRegistry]
+    
+    // 🧠 Tactical Memory Sort: Prioritizes active targets
     private var objectives: [StrategicObjective] {
         fetchedObjectives.sorted {
             if $0.isCompleted == $1.isCompleted {
                 return $0.targetDate < $1.targetDate
             }
-            return !$0.isCompleted && $1.isCompleted // Places active (false) above completed (true)
+            return !$0.isCompleted && $1.isCompleted
         }
     }
     
-    // State for CRUD Operations
+    // STATE FOR CRUD OPERATIONS
     @State private var editingObjective: StrategicObjective?
     @State private var showingAddSheet = false
+    
+    // ✨ THE ENGINE STATE: Triggers the PlanPreviewCanvas
+    @State private var generatedPlan: [OperationalDirective]? = nil
+    @State private var selectedObjectiveName: String = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -52,16 +57,28 @@ struct StrategicObjectivesView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                // THE DATA LIST (Supports Swipe-to-Delete)
                 List {
                     ForEach(objectives) { objective in
                         ObjectiveRowCard(objective: objective)
                             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                             .listRowBackground(Color.clear)
                             .listRowSeparator(.hidden)
+                            
+                            // ✨ THE ENGINE TRIGGER: Swipe right to build the tactical blueprint
+                            .swipeActions(edge: .leading) {
+                                if !objective.isCompleted {
+                                    Button {
+                                        generateBlueprint(for: objective)
+                                    } label: {
+                                        Label("Build Plan", systemImage: "bolt.fill")
+                                    }
+                                    .tint(ColorTheme.prime)
+                                }
+                            }
+                            
                             .onTapGesture {
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                editingObjective = objective // Triggers the Edit Sheet
+                                editingObjective = objective
                             }
                     }
                     .onDelete(perform: deleteObjective)
@@ -87,30 +104,89 @@ struct StrategicObjectivesView: View {
             .padding(.top, 12)
         }
         .applyTacticalOS(title: "Primary Objectives", showBack: true)
+        
+        // --- MODAL LAYERS ---
+        
         .sheet(item: $editingObjective) { objective in
             EditObjectiveSheet(objective: objective)
-                .presentationDetents([.large])
         }
         .sheet(isPresented: $showingAddSheet) {
-            // Note: Ensure ObjectiveSetupSheet() exists in your project.
-            ObjectiveSetupSheet()
-                .presentationDetents([.large])
+            // ✨ THE BRIDGE: Catch the new objective and fire the engine!
+                        ObjectiveSetupSheet { newObjective in
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                generateBlueprint(for: newObjective)
+                            }
+                        }
+        }
+        
+        // ✨ THE PREVIEW LAYER: This shows the user the plan before saving to DB
+        .fullScreenCover(item: Binding(
+            get: { generatedPlan != nil ? IdentifiableArray(data: generatedPlan!) : nil },
+            set: { if $0 == nil { generatedPlan = nil } }
+        )) { planWrapper in
+            PlanPreviewCanvas(
+                generatedPlan: planWrapper.data,
+                objectiveName: selectedObjectiveName
+            )
         }
     }
     
-    // MARK: - ⚙️ LOGIC: PURGE RECORD
+    // MARK: - ⚙️ ENGINE EXECUTION
+    private func generateBlueprint(for objective: StrategicObjective) {
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        
+        // Ensure we have a registry to calibrate the math
+        guard let registry = registries.first else {
+            print("❌ CALIBRATION FAULT: UserRegistry not found.")
+            return
+        }
+        
+        // Inside `generateBlueprint(for:)` in StrategicObjectivesView
+                let defaultSkeleton: [Int: [BlueprintSlot]] = [
+                    0: [.init(category: .easyRun, timeOfDay: .am), .init(category: .strengthUpper, timeOfDay: .pm)],
+                    1: [.init(category: .recoverySpin, timeOfDay: .am)],
+                    2: [.init(category: .speedRun, timeOfDay: .am)],
+                    3: [.init(category: .easyRun, timeOfDay: .am), .init(category: .strengthLower, timeOfDay: .pm)],
+                    4: [.init(category: .thresholdRun, timeOfDay: .am)],
+                    5: [.init(category: .easyRun, timeOfDay: .am)],
+                    6: [.init(category: .longRun, timeOfDay: .am)]
+                ]
+
+                let config = TrainingEngineService.PlanConfiguration(
+                    objective: objective,
+                    registry: registry,
+                    currentCTL: 45.0,
+                    startDate: Date(),
+                    initialWeeklyMinutes: 180.0,
+                    skeleton: defaultSkeleton // ✨ Passes your exact 95kg Rebuild Hybrid Split
+                )
+        
+   
+        
+        do {
+            // Run the Hudson/80-20 Math
+            let plan = try TrainingEngineService.generatePlan(config: config)
+            self.selectedObjectiveName = objective.eventName
+            self.generatedPlan = plan // This state change launches the fullScreenCover
+        } catch {
+            print("❌ ENGINE FAULT: \(error.localizedDescription)")
+        }
+    }
+    
     private func deleteObjective(offsets: IndexSet) {
         for index in offsets {
             let objectiveToDelete = objectives[index]
             context.delete(objectiveToDelete)
         }
-        do {
-            try context.save()
-            UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
-        } catch {
-            print("❌ DELETE FAULT: \(error.localizedDescription)")
-        }
+        try? context.save()
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
     }
+}
+
+// ✨ HELPER: Makes the plan array identifiable for the sheet
+struct IdentifiableArray<T>: Identifiable {
+    let id = UUID()
+    let data: [T]
 }
 
 // MARK: - 🧱 SUB-COMPONENT: EDIT SHEET (@Bindable)

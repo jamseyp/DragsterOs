@@ -33,7 +33,7 @@ final class OperationalDirective: Identifiable {
     init(
         assignedDate: Date = .now,
         discipline: String = "RUN",
-        missionTitle: String = "New Mission",
+        missionTitle: String = "New Workout",
         missionNotes: String = "",
         warmupMinutes: Int = 10,
         intervalSets: Int = 1,

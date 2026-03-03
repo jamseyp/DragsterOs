@@ -123,7 +123,7 @@ struct SessionDetailCanvas: View {
             "user_baselines": [
                 "target_weight_kg": registry.targetWeight,
                 "z2_aerobic_limit_bpm": registry.zone2Max,
-                "ftp_watts": registry.functionalThresholdPower
+                "ftp_watts": registry.ftp
             ],
             "session_metadata": [
                 "discipline": session.discipline,
@@ -224,9 +224,9 @@ struct SessionDetailCanvas: View {
                 
                 // 3. HERO METRICS
                 VStack(spacing: 8) {
-                    Image(systemName: session.disciplineIcon)
+                    Image(systemName: ColorTheme.disciplineTheme.icon(discipline: session.discipline))
                         .font(.system(size: 40))
-                        .foregroundStyle(session.disciplineColor)
+                        .foregroundStyle(ColorTheme.disciplineTheme.color(discipline: session.discipline))
                     Text(session.distanceKM > 0 ? "\(session.distanceKM, specifier: "%.2f") km" : "\(Int(session.durationMinutes)) min")
                         .font(.system(size: 56, weight: .heavy, design: .rounded))
                         .foregroundStyle(ColorTheme.textPrimary)
