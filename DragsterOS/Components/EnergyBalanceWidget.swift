@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 
+// MARK: - 🧬 AXIOM METABOLIC WIDGET
 struct EnergyBalanceWidget: View {
     @State private var intake: Double = 0
     @State private var burned: Double = 0
@@ -10,17 +11,18 @@ struct EnergyBalanceWidget: View {
     
     private var healthManager = HealthKitManager.shared
     
-    // 🧠 LOGIC: Determine the state of the fuel line
+    // 🧠 LOGIC: Determine the state of the metabolic delta
     private var fuelStatus: (label: String, color: Color, isWarning: Bool) {
         if net >= -50 { return ("MAINTENANCE", .green, false) }
         if net < -50 && net >= -500 { return ("OPTIMAL CUT", .cyan, false) }
-        return ("CRITICAL DEFICIT", ColorTheme.critical, true)
+        // ✨ THE POLISH: Removed punitive "Critical Deficit" terminology
+        return ("STEEP METABOLIC DELTA", ColorTheme.critical, true)
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Text("THERMODYNAMIC STATUS")
+                Text("METABOLIC DELTA STATUS")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.prime)
                 Spacer()
@@ -43,6 +45,8 @@ struct EnergyBalanceWidget: View {
                         Text("\(Int(net))")
                             .font(.system(size: 36, weight: .heavy, design: .rounded))
                             .foregroundStyle(fuelStatus.color)
+                            .contentTransition(.numericText()) // ✨ THE POLISH: Fluid number changes
+                        
                         Text("NET KCAL BALANCE")
                             .font(.system(size: 10, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
@@ -50,8 +54,8 @@ struct EnergyBalanceWidget: View {
                     Spacer()
                     VStack(alignment: .trailing, spacing: 8) {
                         HStack(spacing: 12) {
-                            ThermodynamicIndicator(label: "INTAKE", value: "\(Int(intake))", color: .green)
-                            ThermodynamicIndicator(label: "BURN", value: "\(Int(burned))", color: .orange)
+                            MetabolicIndicator(label: "INTAKE", value: "\(Int(intake))", color: .green)
+                            MetabolicIndicator(label: "BURN", value: "\(Int(burned))", color: .orange)
                         }
                     }
                 }
@@ -60,7 +64,7 @@ struct EnergyBalanceWidget: View {
                 
                 // 📊 14-DAY TREND CHART WITH AXIS INDICATORS
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("14-DAY THERMODYNAMIC TREND")
+                    Text("14-DAY METABOLIC TREND")
                         .font(.system(size: 8, weight: .bold, design: .monospaced))
                         .foregroundStyle(ColorTheme.textMuted)
                     
@@ -110,14 +114,42 @@ struct EnergyBalanceWidget: View {
             let data = await healthManager.fetchEnergyBalance()
             let historicalData = await healthManager.fetchHistoricalEnergyBalance(daysBack: 14)
             await MainActor.run {
-                self.intake = data.intake
-                self.burned = data.burned
-                self.net = data.net
-                self.history = historicalData.map { DailyEnergyRecord(date: $0.date, net: $0.net) }
-                self.isLoading = false
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    self.intake = data.intake
+                    self.burned = data.burned
+                    self.net = data.net
+                    self.history = historicalData.map { DailyEnergyRecord(date: $0.date, net: $0.net) }
+                    self.isLoading = false
+                }
             }
         }
     }
+}
+
+// MARK: - 🧱 SUB-COMPONENTS
+struct MetabolicIndicator: View {
+    var label: String
+    var value: String
+    var color: Color
+    
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 2) {
+            Text(label)
+                .font(.system(size: 8, weight: .black, design: .monospaced))
+                .foregroundStyle(ColorTheme.textMuted)
+            Text(value)
+                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                .foregroundStyle(color)
+                .contentTransition(.numericText()) // ✨ THE POLISH: Fluid updates when async data arrives
+        }
+    }
+}
+
+// ✨ FIXED: Struct defined at top-level for scope visibility
+struct DailyEnergyRecord: Identifiable {
+    let id = UUID()
+    let date: Date
+    let net: Double
 }
 struct ThermodynamicIndicator: View {
     var label: String
@@ -134,11 +166,4 @@ struct ThermodynamicIndicator: View {
                 .foregroundStyle(color)
         }
     }
-}
-
-// ✨ FIXED: Struct defined at top-level for scope visibility
-struct DailyEnergyRecord: Identifiable {
-    let id = UUID()
-    let date: Date
-    let net: Double
 }

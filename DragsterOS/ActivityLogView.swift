@@ -240,6 +240,11 @@ struct ActivityLogView: View {
                     async let cadTask = healthManager.fetchAverageCadence(for: workout, isRide: isRide)
                     async let gctTask = healthManager.fetchAverageGCT(for: workout)
                     async let oscTask = healthManager.fetchAverageOscillation(for: workout)
+                    
+                    
+                    async let rawRPE = healthManager.fetchTrueRPE(for: workout)
+                    let absoluteRPE: Int = await Int(rawRPE)
+                    
                     let elevResult = healthManager.fetchElevation(for: workout)
                     
                     let (trueAvgHR, trueAvgPower, trueAvgCadence, trueGCT, trueOsc) = await (hrTask, pwrTask, cadTask, gctTask, oscTask)
@@ -250,7 +255,7 @@ struct ActivityLogView: View {
                         durationMinutes: duration,
                         distanceKM: distance,
                         averageHR: trueAvgHR,
-                        rpe: 5,
+                        rpe: absoluteRPE,
                         coachNotes: "System Import: Apple Health",
                         avgCadence: trueAvgCadence > 0 ? trueAvgCadence : nil,
                         avgPower: trueAvgPower > 0 ? trueAvgPower : nil,

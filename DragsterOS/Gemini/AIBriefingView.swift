@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 🧠 AI INTELLIGENCE TERMINAL
+// MARK: - 🧠 AXIOM INTELLIGENCE TERMINAL
 struct AIBriefingView: View {
     @Environment(\.modelContext) private var context
     
@@ -49,9 +49,10 @@ struct AIBriefingView: View {
         else if readiness >= 40 { flags.append("Status: Yellow (Degraded)") }
         else { flags.append("Status: Red (Critical Fatigue)") }
         
-        if yesterdayNet < -500 { flags.append("Warning: Thermodynamic Deficit") }
-        if sleep > 0 && sleep < 6.0 { flags.append("Warning: Inadequate Recovery") }
-        if respiratoryRate > 18.0 { flags.append("Warning: Elevated Respiration (CNS Stress)") }
+        // ✨ THE POLISH: Clinical terminology update
+        if yesterdayNet < -500 { flags.append("Action: Monitor Metabolic Delta") }
+        if sleep > 0 && sleep < 6.0 { flags.append("Warning: Inadequate CNS Recovery") }
+        if respiratoryRate > 18.0 { flags.append("Warning: Elevated Respiration (System Stress)") }
         
         return flags.isEmpty ? "Status: Nominal" : flags.joined(separator: " | ")
     }
@@ -66,7 +67,7 @@ struct AIBriefingView: View {
         
         let sensorData: [String: Any] = [
             "user_baselines": [
-                "target_weight_kg": registry.targetWeight, // ✨ INJECTED: Core metric for coach logic
+                "target_weight_kg": registry.targetWeight,
                 "max_hr_bpm": registry.maxHR,
                 "resting_hr_bpm": registry.restingHR,
                 "vo2_max": registry.vo2Max,
@@ -74,7 +75,7 @@ struct AIBriefingView: View {
                 "z4_threshold_limit_bpm": registry.zone4Max,
                 "ftp_watts": registry.ftp,
                 "target_tdee_kcal": registry.effectiveTDEE,
-                "protein_floor_g": 215 // ✨ INJECTED: Mandatory macro floor
+                "protein_floor_g": 215
             ],
             "autonomic_nervous_system": [
                 "readiness_score": todayLog?.readinessScore ?? 0,
@@ -89,9 +90,9 @@ struct AIBriefingView: View {
                 "respiratory_rate": respiratoryRate,
                 "wrist_temp_deviation_c": wristTemp
             ],
-            "thermodynamics": [
+            "metabolic_data": [ // ✨ THE POLISH: Refactored from Thermodynamics
                 "yesterday_net_kcal": yesterdayNet,
-                "status": yesterdayNet < -500 ? "Critical Deficit" : (yesterdayNet < -50 ? "Optimal Cut" : "Maintenance")
+                "status": yesterdayNet < -500 ? "Steep Metabolic Delta" : (yesterdayNet < -50 ? "Optimal Cut" : "Maintenance")
             ],
             "biomechanics_last_session": [
                 "avg_gct_ms": sessions.first?.groundContactTime ?? 0,
@@ -120,10 +121,11 @@ struct AIBriefingView: View {
         
         let missionContext = todayMission != nil ? "Activity: \(todayMission!.missionTitle)\nTarget TSS: \(Int(todayMission!.targetLoad))\nFuel Tier: \(todayMission!.fuelTier)\nCoach Notes: \(todayMission!.coachNotes)" : "No directive scheduled for today. Focus on dopamine-safe, active recovery."
         
-        // ✨ INJECTED: Updated Header and Request for HYBRID EVOLUTION v3
-        let header = "[System: Dragster OS - Telemetry Feed]\nStrategic Objective: \(objectiveString)\nCommand System Assessment: \(dynamicCommandStatus)\n\n"
+        // ✨ INJECTED: System identity updated to Axiom
+        let header = "[System: Axiom - Telemetry Feed]\nStrategic Objective: \(objectiveString)\nCommand System Assessment: \(dynamicCommandStatus)\n\n"
         
-        let request = "Request: You are THE HYBRID EVOLUTION v3 — an elite, fiercely supportive, and neurodivergent-optimized performance coach. Your athlete is Jamie. Execute the MANDATORY 08:00 BRIEF based on the Dragster OS telemetry below. Structure your response exactly into: 1. DAILY DRAGSTER OS TELEMETRY, 2. MACRO BLUEPRINT (enforcing the 215g protein floor against the Target TDEE), and 3. TRAINING ALIGNMENT. Frame any required rest as 'charging the battery' or 'mindful reloading' to soothe ADHD impatience. Tone: Warm, elegant, fiercely supportive, and deeply structured.\n\n"
+        // ✨ INJECTED: Removed mechanical metaphors ("charging the battery") and replaced with clinical neurodivergent framing
+        let request = "Request: You are THE HYBRID EVOLUTION v3 — an elite, fiercely supportive, and neurodivergent-optimized performance coach. Your athlete is Jamie. Execute the MANDATORY 08:00 BRIEF based on the Axiom telemetry below. Structure your response exactly into: 1. DAILY AXIOM TELEMETRY, 2. MACRO BLUEPRINT (enforcing the 215g protein floor against the Target TDEE), and 3. TRAINING ALIGNMENT. Frame any required rest as a 'neural reset' or 'strategic adaptation' to soothe ADHD impatience. Tone: Warm, elegant, fiercely supportive, and deeply structured.\n\n"
         
         let directiveData = "// Today's Directive //\n\(missionContext)\n\n"
         let jsonData = "// Clinical Telemetry JSON //\n\(compiledJSONPayload)"
@@ -225,13 +227,14 @@ struct AIBriefingView: View {
                     Button(action: {
                         UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
                         UIPasteboard.general.string = compiledPayload
-                        withAnimation { isCopied = true }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { isCopied = true }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation { isCopied = false }
+                            withAnimation(.easeInOut(duration: 0.2)) { isCopied = false }
                         }
                     }) {
                         HStack {
                             Image(systemName: isCopied ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                                .contentTransition(.symbolEffect(.replace))
                             Text(isCopied ? "Payload Copied" : "Copy to Clipboard")
                         }
                         .font(.system(size: 14, weight: .bold, design: .monospaced))
@@ -247,7 +250,7 @@ struct AIBriefingView: View {
             }
             .padding(.top, 20)
         }
-        .applyTacticalOS(title: "AI Briefing", showBack: false)
+        .applyTacticalOS(title: "AI Briefing", showBack: false) // Assuming applyTacticalOS is an established modifier in your design system!
         .sheet(isPresented: $showingRegistry) {
             RegistrySettingsView()
         }
@@ -273,6 +276,7 @@ struct AIBriefingView: View {
 }
 
 // MARK: - 🧱 SUB-COMPONENTS
+// (DossierRow, DossierSubStat, and ZoneIndicator remain identical)
 struct DossierRow: View {
     let label: String
     let value: String

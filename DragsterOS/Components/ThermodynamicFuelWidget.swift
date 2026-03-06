@@ -1,11 +1,11 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - 🔋 THERMODYNAMIC WIDGET
-struct ThermodynamicFuelWidget: View {
+// MARK: - 🔋 AXIOM METABOLIC WIDGET
+struct MetabolicFuelWidget: View {
     // Inputs from the Dashboard
     let plannedTier: String?
-    let currentWeightKG: Double // Retained for compatibility with ContentView
+    let currentWeightKG: Double // Retained for compatibility with scaling logic
     
     // State Variables
     @State private var healthManager = HealthKitManager.shared
@@ -26,19 +26,19 @@ struct ThermodynamicFuelWidget: View {
             
             // HEADER
             HStack {
-                Text("THERMODYNAMIC STATE")
+                Text("FUELING ARCHITECTURE")
                     .font(.system(size: 12, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.textMuted)
                 
                 Spacer()
                 
-                // NEW: Calibration Trigger
-                                Button(action: { showingCalibration = true }) {
-                                    Image(systemName: "slider.horizontal.3")
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(ColorTheme.textMuted)
-                                }
-                                .padding(.trailing, 4)
+                // Calibration Trigger
+                Button(action: { showingCalibration = true }) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 12))
+                        .foregroundStyle(ColorTheme.textMuted)
+                }
+                .padding(.trailing, 4)
                 
                 Text((plannedTier ?? "LOW").uppercased())
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
@@ -58,11 +58,13 @@ struct ThermodynamicFuelWidget: View {
                         Text("\(Int(actualIntakeCals))")
                             .font(.system(size: 40, weight: .heavy, design: .rounded))
                             .foregroundStyle(ColorTheme.textPrimary)
+                            .contentTransition(.numericText()) // ✨ THE POLISH: Fluid ticking
+                        
                         Text("/ \(Int(target.calories)) KCAL")
                             .font(.system(size: 14, weight: .bold, design: .monospaced))
                             .foregroundStyle(ColorTheme.textMuted)
                     }
-                    Text("TARGET DICTATED BY FUEL TIER")
+                    Text("TARGET DICTATED BY METABOLIC TIER")
                         .font(.system(size: 8, weight: .black, design: .monospaced))
                         .foregroundStyle(ColorTheme.prime.opacity(0.7))
                 }
@@ -73,21 +75,24 @@ struct ThermodynamicFuelWidget: View {
                         title: "PROTEIN",
                         current: actualProtein,
                         target: target.protein,
-                        color: .blue
+                        color: .blue,
+                        isFloor: true // ✨ INJECTED: Flag to emphasize the 215g non-negotiable floor
                     )
                     
                     MacroProgressCard(
                         title: "CARBS",
                         current: actualCarbs,
                         target: target.carbs,
-                        color: .orange
+                        color: .orange,
+                        isFloor: false
                     )
                     
                     MacroProgressCard(
                         title: "FAT",
                         current: actualFat,
                         target: target.fat,
-                        color: .purple
+                        color: .purple,
+                        isFloor: false
                     )
                 }
             }
@@ -101,16 +106,18 @@ struct ThermodynamicFuelWidget: View {
             let energy = await healthManager.fetchEnergyBalance()
             
             await MainActor.run {
-                self.actualProtein = macros.protein
-                self.actualCarbs = macros.carbs
-                self.actualFat = macros.fat
-                self.actualIntakeCals = energy.intake
-                self.isLoading = false
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    self.actualProtein = macros.protein
+                    self.actualCarbs = macros.carbs
+                    self.actualFat = macros.fat
+                    self.actualIntakeCals = energy.intake
+                    self.isLoading = false
+                }
             }
         }
         .sheet(isPresented: $showingCalibration) {
-                    FuelTierConfigurationSheet()
-                }
+            FuelTierConfigurationSheet() // (Assume this will be refactored to MetabolicTierConfigurationSheet next)
+        }
     }
 }
 
@@ -120,6 +127,7 @@ struct MacroProgressCard: View {
     let current: Double
     let target: Double
     let color: Color
+    let isFloor: Bool
     
     var percentage: Double {
         guard target > 0 else { return 0 }
@@ -128,16 +136,28 @@ struct MacroProgressCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.system(size: 10, weight: .black, design: .monospaced))
-                .foregroundStyle(ColorTheme.textMuted)
+            HStack(spacing: 4) {
+                Text(title)
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(isFloor ? color : ColorTheme.textMuted) // Emphasize Protein
+                
+                if isFloor {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(color)
+                }
+            }
             
             // Progress Bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4).fill(ColorTheme.background)
-                    RoundedRectangle(cornerRadius: 4).fill(color)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(ColorTheme.background)
+                    
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(color)
                         .frame(width: geo.size.width * percentage)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.7), value: percentage) // ✨ THE POLISH: Fluid bar fill
                 }
             }
             .frame(height: 6)
@@ -147,13 +167,20 @@ struct MacroProgressCard: View {
                 Text("\(Int(current))")
                     .font(.system(size: 16, weight: .heavy, design: .rounded))
                     .foregroundStyle(ColorTheme.textPrimary)
+                    .contentTransition(.numericText()) // ✨ THE POLISH: Fluid updates
+                
                 Text("/\(Int(target))g")
                     .font(.system(size: 10, weight: .bold, design: .monospaced))
                     .foregroundStyle(ColorTheme.textMuted)
             }
         }
         .padding(12)
-        .background(ColorTheme.surfaceBorder.opacity(0.3))
+        // Elevate the background slightly if it's the mandatory floor
+        .background(isFloor ? color.opacity(0.1) : ColorTheme.surfaceBorder.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isFloor ? color.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
     }
 }

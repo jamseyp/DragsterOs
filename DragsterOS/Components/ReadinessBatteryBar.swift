@@ -1,79 +1,96 @@
 import SwiftUI
 
-/// 🎨 THE CANVAS: A high-contrast visualization of Central Nervous System (CNS) Readiness.
-/// Fully conforms to the Dragster OS ColorTheme engine for seamless Light/Dark mode transitions.
-struct ReadinessBatteryBar: View {
+/// 🎨 THE CANVAS: A gamified, high-contrast visualization of Central Nervous System (CNS) Readiness.
+struct NeuralReadinessWidget: View {
     let score: Double
     
     // Internal state to trigger the fluid fill animation upon rendering
     @State private var animatedScore: Double = 0.0
     
-    // 📐 ARCHITECTURE: Semantic color mapping powered by ColorTheme
-    private var batteryColor: Color {
+    // 📐 ARCHITECTURE: Semantic color mapping
+    private var readinessColor: Color {
         switch score {
-        case 0..<40: return ColorTheme.critical     // Critical systemic fatigue
-        case 40..<75: return ColorTheme.warning     // Moderate mechanical load
-        default: return ColorTheme.recovery         // Peak Kinetic Readiness / Tapered
+        case 0..<40: return ColorTheme.critical     // High CNS fatigue - requires active recovery
+        case 40..<75: return .cyan                  // Moderate load - adaptive phase
+        default: return .green                      // Peak Kinetic Readiness
         }
     }
     
     private var statusText: String {
         switch score {
-        case 0..<40: return "SYSTEM OVERRIDE REQUIRED"
-        case 40..<75: return "NOMINAL FATIGUE DETECTED"
-        default: return "PEAK KINETIC READINESS"
+        case 0..<40: return "STRATEGIC RECOVERY PROTOCOL"
+        case 40..<75: return "MODERATE NEURAL LOAD"
+        default: return "PRIME KINETIC STATE"
         }
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 16) {
             
-            // HEADER: Monospaced typography for a telemetry-terminal aesthetic
+            // --- 1. HEADER ---
             HStack(alignment: .bottom) {
-                Text("CNS READINESS")
-                    .font(.system(.caption, design: .monospaced, weight: .heavy))
-                    .foregroundStyle(ColorTheme.textMuted) // ✨ Dynamically shifts
+                Text("NEURAL READINESS")
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                    .foregroundStyle(ColorTheme.textMuted)
                 
                 Spacer()
                 
-                Text("\(Int(animatedScore))")
-                    .font(.system(.title, design: .monospaced, weight: .black))
-                    .foregroundStyle(batteryColor)
-                + Text(" / 100")
-                    .font(.system(.caption, design: .monospaced, weight: .bold))
-                    .foregroundStyle(ColorTheme.textMuted) // ✨ Dynamically shifts
-            }
-            
-            // THE BAR: The physical battery track
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background Track
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(ColorTheme.surfaceBorder) // ✨ Blends seamlessly into the theme
-                        .frame(height: 12)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text("\(Int(animatedScore))")
+                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .foregroundStyle(readinessColor)
+                        .contentTransition(.numericText())
                     
-                    // Active Energy Level
-                    RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(batteryColor)
-                        .frame(width: max(0, geometry.size.width * CGFloat(animatedScore / 100.0)), height: 12)
-                        // ✨ THE POLISH: A neon glow effect that scales gracefully
-                        .shadow(color: batteryColor.opacity(0.6), radius: animatedScore > 75 ? 8 : 2, x: 0, y: 0)
+                    Text("/ 100")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundStyle(ColorTheme.textMuted)
                 }
             }
-            .frame(height: 12)
             
-            // FOOTER: Status Subtitle
-            Text(statusText)
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundStyle(batteryColor.opacity(0.8))
+            // --- 2. 🧬 THE ARRAY ---
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 4) {
+                    ForEach(0..<20, id: \.self) { index in
+                        NeuralNode(
+                            index: index,
+                            animatedScore: animatedScore,
+                            activeColor: readinessColor
+                        )
+                    }
+                }
+                
+                // STATUS SUBTITLE
+                Text(statusText)
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(readinessColor.opacity(0.8))
+            }
+            
+            // --- 3. ✨ NEW: PHYSIOLOGICAL INSIGHT BOX ---
+            VStack(alignment: .leading, spacing: 6) {
+                Text("SYSTEM INSIGHT: NEURAL STATE")
+                    .font(.system(size: 9, weight: .black, design: .monospaced))
+                    .foregroundStyle(ColorTheme.prime)
+                
+                Text("This metric fuses your autonomic nervous system (HRV/RHR) with sleep architecture to gauge systemic recovery. High scores authorize high-intensity threshold work for your 4:59 min/km target. Lower scores indicate active adaptation—when fatigued, prioritize your 215g protein floor and execute strategic recovery without guilt.")
+                    .font(.system(size: 11, weight: .medium, design: .default))
+                    .foregroundStyle(ColorTheme.textMuted)
+                    .lineSpacing(2)
+            }
+            .padding(.leading, 12)
+            .padding(.top, 4)
+            .overlay(
+                Rectangle()
+                    .fill(ColorTheme.prime.opacity(0.5))
+                    .frame(width: 2),
+                alignment: .leading
+            )
         }
-        .padding()
-        // ✨ THE UPGRADE: Dynamic Surface mapping instead of hardcoded .black
+        .padding(16)
         .background(ColorTheme.surface)
-        .cornerRadius(12)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(ColorTheme.surfaceBorder, lineWidth: 1) // ✨ Dynamic subtle border
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(ColorTheme.surfaceBorder, lineWidth: 1)
         )
         .onAppear {
             triggerFluidAnimation()
@@ -82,16 +99,31 @@ struct ReadinessBatteryBar: View {
     
     // MARK: - Mechanical Micro-Interactions
     private func triggerFluidAnimation() {
-        // Reset to 0 if re-rendering, then spring to the actual score
         animatedScore = 0.0
         
-        // A bouncy, fluid spring that feels organic yet precise
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.6, blendDuration: 0.1)) {
+        withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.1)) {
             animatedScore = score
         }
         
-        // A subtle, rigid haptic click to confirm the data has finished rendering
-        let impact = UIImpactFeedbackGenerator(style: .rigid)
-        impact.impactOccurred()
+        UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+    }
+}
+
+// MARK: - 🧱 SUB-COMPONENT: NEURAL NODE
+struct NeuralNode: View {
+    let index: Int
+    let animatedScore: Double
+    let activeColor: Color
+    
+    private var isActive: Bool {
+        animatedScore > (Double(index) * 5.0)
+    }
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
+            .fill(isActive ? activeColor : ColorTheme.surfaceBorder)
+            .frame(maxWidth: .infinity) // ✨ Restored height constraint!
+            .opacity(isActive ? 1.0 : 0.3)
+            .shadow(color: isActive ? activeColor.opacity(0.4) : .clear, radius: 2, x: 0, y: 0)
     }
 }

@@ -114,7 +114,7 @@ struct ManualTelemetrySheet: View {
     
     private func saveManualData() {
         // ✨ CALCULATE CURRENT LOAD PROFILE FOR THE ENGINE
-        let currentLoad = LoadEngine.computeLoad(history: sessions, upTo: .now)
+        let currentLoad = KineticLoadEngine.computeLoad(history: sessions, upTo: .now)
         
         if let current = log {
             // Standard Vitals
@@ -128,7 +128,7 @@ struct ManualTelemetrySheet: View {
             current.eliteReadiness = eliteScore > 0 ? eliteScore : nil
             
             // Re-run the engine using the updated log
-            current.readinessScore = ReadinessEngine.computeReadiness(
+            current.readinessScore = NeuralReadinessEngine.computeReadiness(
                 todayLog: current,
                 history: history,
                 loadProfile: currentLoad
@@ -149,7 +149,7 @@ struct ManualTelemetrySheet: View {
             newLog.eliteReadiness = eliteScore > 0 ? eliteScore : nil
             
             // Run engine
-            newLog.readinessScore = ReadinessEngine.computeReadiness(
+            newLog.readinessScore = NeuralReadinessEngine.computeReadiness(
                 todayLog: newLog,
                 history: history,
                 loadProfile: currentLoad

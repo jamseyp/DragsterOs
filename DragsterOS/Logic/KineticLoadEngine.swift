@@ -1,25 +1,24 @@
 import Foundation
-//
-// 
-/// A deterministic service that calculates the Exponentially Weighted Moving Average (EWMA)
-/// of an athlete's training stress to model cumulative fitness and fatigue.
-struct LoadEngine {
+
+/// 🧬 A deterministic service that calculates the Exponentially Weighted Moving Average (EWMA)
+/// of an athlete's kinetic stress to model cumulative fitness and systemic fatigue.
+struct KineticLoadEngine {
     
-    /// The physical state of the chassis at a specific point in time.
+    /// The physiological state of the neuro-muscular system at a specific point in time.
     struct LoadProfile {
-        /// Chronic Training Load (Fitness). A 42-day rolling average of daily TSS.
+        /// Chronic Training Load (Base Fitness). A 42-day rolling average of daily TSS.
         let ctl: Double
-        /// Acute Training Load (Fatigue). A 7-day rolling average of daily TSS.
+        /// Acute Training Load (Systemic Fatigue). A 7-day rolling average of daily TSS.
         let atl: Double
-        /// Training Stress Balance (Form). A positive number indicates the athlete is primed/tapered.
+        /// Training Stress Balance (Adaptation Status). A positive number indicates the athlete is primed and fully recovered.
         var tsb: Double { ctl - atl }
     }
     
-    /// Computes the physical load profile up to a specific date.
+    /// Computes the physiological load profile up to a specific date.
     /// - Parameters:
     ///   - history: The raw array of completed kinetic sessions.
     ///   - targetDate: The date to calculate the load for (defaults to today in the UI, but can be a future date for forecasting).
-    /// - Returns: A `LoadProfile` representing Fitness, Fatigue, and Form.
+    /// - Returns: A `LoadProfile` representing Fitness, Fatigue, and Adaptation Status.
     static func computeLoad(history: [KineticSession], upTo targetDate: Date) -> LoadProfile {
         guard !history.isEmpty else { return LoadProfile(ctl: 0, atl: 0) }
         

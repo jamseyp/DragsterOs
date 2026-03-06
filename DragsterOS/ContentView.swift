@@ -38,7 +38,7 @@ struct ContentView: View {
                 )
             }
             .tabItem {
-                Label("COMMAND", systemImage: "target")
+                Label("Dashboard", systemImage: "target")
             }
             .tag(0)
             
@@ -49,7 +49,7 @@ struct ContentView: View {
                 ActivityLogView()
             }
             .tabItem {
-                Label("KINETICS", systemImage: "bolt.fill")
+                Label("Activites", systemImage: "bolt.fill")
             }
             .tag(1)
             
@@ -109,7 +109,7 @@ struct ContentView: View {
             }
             
             // 2. Calculate Current Mechanical Load Profile (ATL/CTL)
-            let currentLoadProfile = LoadEngine.computeLoad(history: sessions, upTo: .now)
+            let currentLoadProfile = KineticLoadEngine.computeLoad(history: sessions, upTo: .now)
             
             // 3. Historical Backfill (If less than 2 logs exist)
             if logs.count < 2 {
@@ -127,10 +127,10 @@ struct ContentView: View {
                             weightKG: 0.0,
                             readinessScore: 0.0
                         )
-                        newLog.readinessScore = ReadinessEngine.computeReadiness(
+                        newLog.readinessScore = NeuralReadinessEngine.computeReadiness(
                             todayLog: newLog,
                             history: rollingHistory,
-                            loadProfile: LoadEngine.LoadProfile(ctl: 0, atl: 0)
+                            loadProfile: KineticLoadEngine.LoadProfile(ctl: 0, atl: 0)
                         )
                         context.insert(newLog)
                         rollingHistory.insert(newLog, at: 0)
@@ -159,7 +159,7 @@ struct ContentView: View {
                     if metrics.sleepHours > 0 { existingLog.sleepDuration = metrics.sleepHours }
                     if latestWeight > 0 { existingLog.weightKG = latestWeight }
                     
-                    existingLog.readinessScore = ReadinessEngine.computeReadiness(
+                    existingLog.readinessScore = NeuralReadinessEngine.computeReadiness(
                         todayLog: existingLog,
                         history: updatedLogs,
                         loadProfile: currentLoadProfile
@@ -176,7 +176,7 @@ struct ContentView: View {
                         readinessScore: 0.0
                     )
                     
-                    newLog.readinessScore = ReadinessEngine.computeReadiness(
+                    newLog.readinessScore = NeuralReadinessEngine.computeReadiness(
                         todayLog: newLog,
                         history: updatedLogs,
                         loadProfile: currentLoadProfile
@@ -233,13 +233,13 @@ struct DashboardTab: View {
                 .padding(.top, 20)
                 
                 // 2. Thermodynamic Requirements based on Mission Tier
-                ThermodynamicFuelWidget(
+                MetabolicFuelWidget(
                     plannedTier: todayMission?.fuelTier,
                     currentWeightKG: weight > 0 ? weight : 80.0
                 )
                 .padding(.horizontal)
                 
-                ReadinessBatteryBar(score: readiness)
+                NeuralReadinessWidget(score: readiness)
                     .padding(.horizontal)
                 
                 // .3 Energy Balance
@@ -248,7 +248,10 @@ struct DashboardTab: View {
                 
                 
                 // 3. Visual 7-Day Readiness
-                ReadinessTrendChart(logs: logs)
+                NeuralTrendWidget(logs: logs)
+                    .padding(.horizontal)
+                
+                KineticLoadWidget()
                     .padding(.horizontal)
                 
                 // 4. Daily Biometrics Grid

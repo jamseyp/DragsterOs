@@ -24,7 +24,7 @@ struct OSHeader: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("DRAGSTER OS // V3.1-FLASH")
+                    Text("Axiom // V3.2-FLASH")
                         .font(.system(size: 8, weight: .black, design: .monospaced))
                         .foregroundStyle(ColorTheme.prime.opacity(0.8))
                     

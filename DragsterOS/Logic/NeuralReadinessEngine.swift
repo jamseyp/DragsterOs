@@ -1,27 +1,28 @@
 import Foundation
 
-/// A deterministic service that fuses Central Nervous System (CNS) telemetry
-/// with mechanical fatigue data (TSB) to compute a high-fidelity readiness score.
-struct ReadinessEngine {
+/// 🧠 A deterministic, side-effect-free service that fuses Autonomic Nervous System (ANS) telemetry
+/// with Kinetic Load data (TSB) to compute a high-fidelity systemic readiness score.
+struct NeuralReadinessEngine {
     
-    /// Computes the ultimate 0-100 Readiness Score tailored for a high-performance athlete.
+    /// Computes the ultimate 0-100 Neural Readiness Score tailored for a high-performance athlete.
     /// - Parameters:
-    ///   - todayLog: The telemetry captured this morning.
-    ///   - history: The biological baseline history.
-    ///   - loadProfile: The mechanical strain computed by the `LoadEngine`.
-    /// - Returns: A readiness score from 0.0 (Severe Fatigue) to 100.0 (Prime).
+    ///   - todayLog: The biological telemetry captured this morning.
+    ///   - history: The rolling biological baseline history.
+    ///   - loadProfile: The kinetic strain computed by the `KineticLoadEngine`.
+    /// - Returns: A readiness score from 0.0 (Severe Neural Fatigue) to 100.0 (Prime State).
     static func computeReadiness(
         todayLog: TelemetryLog,
         history: [TelemetryLog],
-        loadProfile: LoadEngine.LoadProfile
+        loadProfile: KineticLoadEngine.LoadProfile // Assume LoadEngine will be refactored to KineticLoadEngine next
     ) -> Double {
         
         // ---------------------------------------------------------
-        // 1. THE "ELITE" MASTER OVERRIDE
+        // 1. CLINICAL OVERRIDE
         // ---------------------------------------------------------
         var biologicalScore: Double = 0.0
         
         if let elite = todayLog.eliteReadiness, elite > 0 {
+            // Directly prioritize a trusted third-party clinical score (e.g., Athlytic/Bevel) if provided
             biologicalScore = elite <= 10 ? Double(elite * 10) : Double(elite)
         } else {
             
@@ -46,7 +47,7 @@ struct ReadinessEngine {
             let baselineSleep = validSleeps.isEmpty ? (todayLog.sleepDuration > 0 ? todayLog.sleepDuration : 8.0) : validSleeps.reduce(0, +) / Double(validSleeps.count)
             
             // ---------------------------------------------------------
-            // 3. SURGICAL BIOLOGICAL SCORING
+            // 3. SURGICAL NEURAL SCORING
             // ---------------------------------------------------------
             let hrvRatio = baselineMetric > 0 ? (todayRecoveryMetric / baselineMetric) : 1.0
             let hrvScore = hrvRatio >= 1.0 ? 100.0 : max(0.0, 100.0 - ((1.0 - hrvRatio) * 200.0))
@@ -60,36 +61,41 @@ struct ReadinessEngine {
             
             let rawBioScore = (hrvScore * 0.5) + (rhrScore * 0.3) + (sleepScore * 0.2)
             
-            // Apple Health SDNN penalty: Cap at 85 if we lack true RMSSD
+            // 🛡️ DATA INTEGRITY GUARDRAIL: Cap at 85 if we rely on Apple Health SDNN instead of true RMSSD
             biologicalScore = (todayLog.rmssd != nil) ? rawBioScore : min(85.0, rawBioScore)
         }
         
         // ---------------------------------------------------------
-        // 4. MECHANICAL SCORING (The "Taper Window")
+        // 4. KINETIC LOAD SCORING (The "Adaptation Window")
         // ---------------------------------------------------------
         let tsb = loadProfile.tsb
-        var mechanicalScore: Double = 0.0
+        var kineticScore: Double = 0.0
         
         if tsb >= -15 && tsb <= 15 {
-            mechanicalScore = 100.0
+            // Optimal adaptation phase (Productive Stress / Tapered)
+            kineticScore = 100.0
         } else if tsb > 15 {
-            mechanicalScore = max(0.0, 100.0 - ((tsb - 15.0) * 2.0))
+            // Under-training or detraining penalty
+            kineticScore = max(0.0, 100.0 - ((tsb - 15.0) * 2.0))
         } else {
-            mechanicalScore = max(0.0, 100.0 + (tsb * 2.0))
+            // Over-reaching / Accumulating fatigue penalty
+            kineticScore = max(0.0, 100.0 + (tsb * 2.0))
         }
         
         // ---------------------------------------------------------
-        // 5. THE GRAND FUSION
+        // 5. SYSTEMIC FUSION
         // ---------------------------------------------------------
         if loadProfile.ctl == 0 && loadProfile.atl == 0 {
-            return biologicalScore
+            return biologicalScore // Fallback if no kinetic history exists
         }
         
-        return (biologicalScore * 0.7) + (mechanicalScore * 0.3)
+        // 70% Biological State, 30% Cumulative Kinetic Strain
+        return (biologicalScore * 0.7) + (kineticScore * 0.3)
     }
     
     /// Flags severe systemic fatigue requiring an immediate training halt.
-    static func requiresOverride(readiness: Double) -> Bool {
+    /// Renamed to frame rest as an intentional strategy, soothing ADHD impatience.
+    static func requiresStrategicRecovery(readiness: Double) -> Bool {
         return readiness < 40.0
     }
 }

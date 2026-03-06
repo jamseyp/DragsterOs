@@ -2,8 +2,8 @@ import SwiftUI
 import Charts
 import SwiftData
 
-// MARK: - 📈 COMPONENT: READINESS TREND CHART
-struct ReadinessTrendChart: View {
+// MARK: - 📈 AXIOM COMPONENT: NEURAL TREND
+struct NeuralTrendWidget: View {
     var logs: [TelemetryLog]
     
     // The segmented picker state
@@ -22,7 +22,7 @@ struct ReadinessTrendChart: View {
             
             // --- HEADER & TIME SELECTOR ---
             HStack {
-                Text("MACRO-CYCLE TREND")
+                Text("NEURAL ADAPTATION TREND")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.textMuted)
                 
@@ -71,7 +71,7 @@ struct ReadinessTrendChart: View {
                         )
                     )
                     
-                    // 2. Solid tactical line
+                    // 2. Clinical trend line
                     LineMark(
                         x: .value("Date", log.date),
                         y: .value("Readiness", log.readinessScore)
@@ -79,7 +79,7 @@ struct ReadinessTrendChart: View {
                     .foregroundStyle(ColorTheme.prime)
                     .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                     
-                    // 3. Tactical dots
+                    // 3. Data points
                     PointMark(
                         x: .value("Date", log.date),
                         y: .value("Readiness", log.readinessScore)
@@ -88,6 +88,8 @@ struct ReadinessTrendChart: View {
                     .symbolSize(30)
                 }
                 .chartYScale(domain: 0...100)
+                // ✨ THE POLISH: Fluid chart morphing when changing time horizons
+                .animation(.spring(response: 0.6, dampingFraction: 0.7), value: timeHorizon)
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                         AxisGridLine().foregroundStyle(ColorTheme.surfaceBorder)
@@ -107,13 +109,13 @@ struct ReadinessTrendChart: View {
                 .frame(height: 140)
             }
             
-            // --- ✨ NEW: TACTICAL EXPLAINER BOX ---
+            // --- ✨ THE POLISH: PHYSIOLOGICAL INSIGHT BOX ---
             VStack(alignment: .leading, spacing: 6) {
-                Text("SYSTEM NOTE: MACRO-CYCLE ANALYSIS")
+                Text("SYSTEM INSIGHT: ADAPTATION HORIZON")
                     .font(.system(size: 9, weight: .black, design: .monospaced))
                     .foregroundStyle(ColorTheme.prime)
                 
-                Text("This plot visualizes your systemic recovery capacity over the selected horizon. Sustained downward gradients indicate accumulating central nervous system (CNS) fatigue. Consider reducing kinetic load if the baseline drops below 40%.")
+                Text("This plot maps your systemic recovery capacity. Sustained downward gradients indicate active neuro-muscular adaptation. If the baseline drops below 40%, deploy strategic recovery protocols to secure your gains and protect the 4:59 min/km pace target.")
                     .font(.system(size: 11, weight: .medium, design: .default))
                     .foregroundStyle(ColorTheme.textMuted)
                     .lineSpacing(2)
